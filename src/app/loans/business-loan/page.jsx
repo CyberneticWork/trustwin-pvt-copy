@@ -16,21 +16,21 @@ export default function SimpleBusinessLoanPage() {
   const [loanType, setLoanType] = useState('daily');
 
   // Common state
-  const [principal, setPrincipal] = useState(50000);
+  const [principal, setPrincipal] = useState(100000);
   
   // Initial payments state - replacing service charge
   const [showInitialPayments, setShowInitialPayments] = useState(false);
-  const [docCharges, setDocCharges] = useState(0);
-  const [serviceCharges, setServiceCharges] = useState(0);
-  const [insuranceCharges, setInsuranceCharges] = useState(0);
+  const [docCharges, setDocCharges] = useState(1000);
+  const [serviceCharges, setServiceCharges] = useState(1000);
+  const [insuranceCharges, setInsuranceCharges] = useState(1000);
   const [serviceChargeOption, setServiceChargeOption] = useState('capitalize');
 
   // Daily loan specific state
-  const [dailyRate, setDailyRate] = useState(5);
+  const [dailyRate, setDailyRate] = useState(7);
   const [dailyTermDays, setDailyTermDays] = useState(20);
 
   // Monthly loan specific state
-  const [monthlyRate, setMonthlyRate] = useState(5);
+  const [monthlyRate, setMonthlyRate] = useState(7);
   const [months, setMonths] = useState(3);
   const [interestFrequency, setInterestFrequency] = useState('yearly');
 

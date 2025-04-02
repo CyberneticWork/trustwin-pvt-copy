@@ -26,8 +26,12 @@ export const BusinessLoanCalculator = (
   
   // Set the base for interest calculation based on the initial payment option
   if (initialPaymentOption === 'capitalizeCharges') {
+    console.log(initialPaymentAmount);
+    
     // For "capitalize initial charges", interest is calculated on (Loan Amount + Initial Payment)
     calculationBase = loanAmount + initialPaymentAmount;
+    console.log(calculationBase);
+    
   } else {
     // For "client pay initial charges" and "withdrawal from capital", interest is calculated only on Loan Amount
     calculationBase = loanAmount;
@@ -105,11 +109,13 @@ export const BusinessLoanCalculator = (
   if (initialPaymentOption === 'capitalizeCharges' || initialPaymentOption === 'clientPay') {
     // For both "capitalize initial charges" and "client pay initial charges":
     // Total Payable = Loan Amount + Total Interest
-    totalPayable = loanAmount + totalInterest;
+    // totalPayable = loanAmount + totalInterest + calculationBase;
+    totalPayable =  totalInterest + calculationBase;
   } else if (initialPaymentOption === 'withdrawFromCapital') {
     // For "withdrawal from capital":
     // Total Payable = (Loan Amount + Total Interest) - Initial Payment
-    totalPayable = (loanAmount + totalInterest) - initialPaymentAmount;
+    // totalPayable = (loanAmount + totalInterest) - initialPaymentAmount;
+    totalPayable = (loanAmount ) + totalInterest + initialPaymentAmount;
   }
   
   // Calculate the payment per period
