@@ -211,16 +211,7 @@ export default function Sidebar() {
                   onClick={() => handleNavigation("dashboard")}
                   collapsed={collapsed}
                 />
-                
-                <NavItem 
-                  icon={<CreditCard className="w-5 h-5" />} 
-                  label="Financial Solutions" 
-                  isActive={activeNav === "loans"}
-                  onClick={() => handleNavigation("loans")}
-                  collapsed={collapsed}
-                  badge="3"
-                />
-                
+
                 <NavItem 
                   icon={<Users className="w-5 h-5" />} 
                   label="Clients" 
@@ -228,6 +219,17 @@ export default function Sidebar() {
                   onClick={() => handleNavigation("clients")}
                   collapsed={collapsed}
                 />
+
+                <NavItem 
+                  icon={<CreditCard className="w-5 h-5" />} 
+                  label="Credits" 
+                  isActive={activeNav === "loans"}
+                  onClick={() => handleNavigation("loans")}
+                  collapsed={collapsed}
+                  badge="2"
+                />
+                
+                
                 
                 <NavItem 
                   icon={<PieChart className="w-5 h-5" />} 

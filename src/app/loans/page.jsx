@@ -26,7 +26,7 @@ export default function Home() {
       path: 'loans/business-loan'
     },
     {
-      title: "High Draft (Leasing)",
+      title: "Auto Loan (Leasing)",
       description: "Flexible leasing options for your business needs.",
       icon: BarChart3,  // Changed to bar chart for financial growth representation
       color: "bg-green-500",
