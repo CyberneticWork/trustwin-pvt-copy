@@ -115,7 +115,7 @@ export const BusinessLoanCalculator = (
     // For "withdrawal from capital":
     // Total Payable = (Loan Amount + Total Interest) - Initial Payment
     // totalPayable = (loanAmount + totalInterest) - initialPaymentAmount;
-    totalPayable = (loanAmount ) + totalInterest + initialPaymentAmount;
+    totalPayable = (loanAmount ) + totalInterest ;
   }
   
   // Calculate the payment per period
