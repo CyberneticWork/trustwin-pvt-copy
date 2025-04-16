@@ -1,67 +1,115 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { AutoLoanCalculator } from "@/components/Calculations/AutoLoanCalculator";
-import { AmortizationCharts } from "@/components/Calculations/AmortizationCharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export default function AutoLoanCalculatorPage() {
-  // Vehicle details
-  const [vehiclePrice, setVehiclePrice] = useState(2500000);
-  const [downPayment, setDownPayment] = useState(500000);
+  // Common state
+  const [vehiclePrice, setVehiclePrice] = useState(3000000);
+  const [downPayment, setDownPayment] = useState(600000);
   const [tradeInValue, setTradeInValue] = useState(0);
+  const [loanAmount, setLoanAmount] = useState(2400000);
+  const [months, setMonths] = useState(36);
+  const [interestRate, setInterestRate] = useState(14);
   
-  // Loan details
-  const [interestRate, setInterestRate] = useState(14.5);
-  const [loanTerm, setLoanTerm] = useState(60); // 60 months = 5 years
-  
-  // Additional costs
-  const [salesTax, setSalesTax] = useState(6);
-  const [otherFees, setOtherFees] = useState(25000);
-  
-  // Display options
-  const [showAmortizationSchedule, setShowAmortizationSchedule] = useState(false);
-  const [scheduleView, setScheduleView] = useState('monthly'); // 'monthly', 'yearly', 'quarterly'
-  
+  // Initial charges state
+  const [showInitialCharges, setShowInitialCharges] = useState(false);
+  const [serviceCharges, setServiceCharges] = useState(0);
+  const [documentCharges, setDocumentCharges] = useState(0);
+  const [rmvCharges, setRmvCharges] = useState(0);
+  const [insurancePremium, setInsurancePremium] = useState(0);
+  const [introducerCommission, setIntroducerCommission] = useState(0); // Added introducer commission
+  const [otherCharges, setOtherCharges] = useState(0);
+  const [initialChargesOption, setInitialChargesOption] = useState('capitalize');
+
   // Results state
   const [results, setResults] = useState(null);
+  const [clientReceiving, setClientReceiving] = useState(0);
+  
+  // State for expanding the amortization table
+  const [showFullAmortization, setShowFullAmortization] = useState(false);
   
   // Calculate loan details when parameters change
   useEffect(() => {
+    // Calculate actual loan amount based on vehicle price, down payment, trade-in
+    let calculatedLoanAmount = vehiclePrice - downPayment - tradeInValue;
+    
+    // Calculate total initial charges
+    const totalInitialCharges = showInitialCharges ? 
+      serviceCharges + documentCharges + rmvCharges + insurancePremium + introducerCommission + otherCharges : 0;
+    
+    // Map the initial charges option to the calculator's initialPaymentOption
+    let initialPaymentOption;
+    switch (initialChargesOption) {
+      case 'capitalize':
+        initialPaymentOption = 'capitalizeCharges';
+        break;
+      case 'separate':
+        initialPaymentOption = 'clientPay';
+        break;
+      case 'withdraw':
+        initialPaymentOption = 'withdrawFromCapital';
+        break;
+      default:
+        initialPaymentOption = 'clientPay';
+    }
+
+    // Calculate client receiving amount
+    let receivingAmount;
+    if (!showInitialCharges) {
+      receivingAmount = calculatedLoanAmount;
+    } else {
+      switch (initialChargesOption) {
+        case 'capitalize':
+          receivingAmount = calculatedLoanAmount;
+          break;
+        case 'separate':
+          receivingAmount = calculatedLoanAmount;
+          break;
+        case 'withdraw':
+          receivingAmount = calculatedLoanAmount - totalInitialCharges;
+          break;
+        default:
+          receivingAmount = calculatedLoanAmount;
+      }
+    }
+    setClientReceiving(receivingAmount);
+    setLoanAmount(calculatedLoanAmount);
+
+    // Calculate loan results
     const calculationResults = AutoLoanCalculator(
-      vehiclePrice,
+      calculatedLoanAmount,
       interestRate,
-      loanTerm,
-      downPayment,
-      salesTax,
-      otherFees,
-      tradeInValue
+      months,
+      'monthly',
+      'yearly', // Interest rate is always annual
+      0, // serviceCharge is now 0, as we're using initialPayment
+      totalInitialCharges,
+      initialPaymentOption
     );
     
     setResults(calculationResults);
   }, [
     vehiclePrice,
-    interestRate, 
-    loanTerm,
     downPayment,
-    salesTax,
-    otherFees,
-    tradeInValue
+    tradeInValue,
+    interestRate, 
+    months, 
+    serviceCharges,
+    documentCharges,
+    rmvCharges,
+    insurancePremium,
+    introducerCommission, // Added to dependency array
+    otherCharges,
+    initialChargesOption,
+    showInitialCharges
   ]);
 
   // Format currency in LKR
@@ -72,318 +120,463 @@ export default function AutoLoanCalculatorPage() {
       minimumFractionDigits: 2
     }).format(amount);
   };
-  
-  // Format percentage
-  const formatPercentage = (value) => {
-    return `${value}%`;
-  };
-  
-  // Filter amortization schedule based on view preference
-  const getFilteredSchedule = () => {
-    if (!results || !results.amortizationSchedule) return [];
+
+  // Get initial charges display
+  const getInitialChargesDisplay = () => {
+    if (!showInitialCharges) return { text: "None", color: "text-gray-500" };
     
-    if (scheduleView === 'monthly') {
-      return results.amortizationSchedule;
-    } else if (scheduleView === 'yearly') {
-      return results.amortizationSchedule.filter((_, index) => 
-        (index + 1) % 12 === 0 || index === results.amortizationSchedule.length - 1
-      );
-    } else if (scheduleView === 'quarterly') {
-      return results.amortizationSchedule.filter((_, index) => 
-        (index + 1) % 3 === 0 || index === results.amortizationSchedule.length - 1
-      );
+    const totalCharges = serviceCharges + documentCharges + rmvCharges + insurancePremium + introducerCommission + otherCharges;
+    let prefix = '';
+    let textColor = '';
+
+    switch (initialChargesOption) {
+      case 'capitalize':
+        prefix = '+';
+        textColor = 'text-green-600';
+        break;
+      case 'separate':
+        textColor = 'text-gray-600';
+        break;
+      case 'withdraw':
+        prefix = '-';
+        textColor = 'text-red-600';
+        break;
+      default:
+        textColor = 'text-black';
     }
-    
-    return results.amortizationSchedule;
+
+    return {
+      text: `${prefix}${formatCurrency(totalCharges)}`,
+      color: textColor
+    };
   };
 
   return (
-    <div className="container max-w-6xl mx-auto p-4 space-y-6 min-h-screen overflow-auto">
-      {/* Page Title */}
-      <h1 className="text-3xl font-bold tracking-tight">Auto Loan Calculator</h1>
-      <p className="text-muted-foreground">
-        Calculate your auto loan payments and view the complete amortization schedule
-      </p>
+    <div style={{ width: "100%", maxWidth: "1200px", margin: "0 auto", padding: "20px", overflowX: "hidden" }}>
+      <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "20px" }}>Auto Loan Calculator</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Main layout - 2 column grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(500px, 1fr))", gap: "20px", marginBottom: "40px" }}>
         {/* Left column - Input form */}
-        <div className="space-y-6">
-          {/* Vehicle Details Section */}
+        <div>
           <Card>
             <CardHeader>
-              <CardTitle>Vehicle Details</CardTitle>
+              <CardTitle>Vehicle & Loan Details</CardTitle>
+              <CardDescription>Enter information about the vehicle and desired loan terms</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="vehiclePrice">Vehicle Price</Label>
-                <Input
-                  id="vehiclePrice"
-                  type="number"
-                  value={vehiclePrice}
-                  onChange={(e) => setVehiclePrice(Number(e.target.value))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="downPayment">Down Payment</Label>
-                <Input
-                  id="downPayment"
-                  type="number"
-                  value={downPayment}
-                  onChange={(e) => setDownPayment(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Down payment is {((downPayment / vehiclePrice) * 100).toFixed(1)}% of the vehicle price
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="tradeInValue">Trade-in Value</Label>
-                <Input
-                  id="tradeInValue"
-                  type="number"
-                  value={tradeInValue}
-                  onChange={(e) => setTradeInValue(Number(e.target.value))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Loan Details Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Loan Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="interestRate">Annual Interest Rate (%)</Label>
-                <Input
-                  id="interestRate"
-                  type="number"
-                  value={interestRate}
-                  onChange={(e) => setInterestRate(Number(e.target.value))}
-                  step="0.1"
-                  min="0"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="loanTerm">Loan Term</Label>
-                <Select 
-                  value={loanTerm.toString()} 
-                  onValueChange={(value) => setLoanTerm(Number(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="24">24 months (2 years)</SelectItem>
-                    <SelectItem value="36">36 months (3 years)</SelectItem>
-                    <SelectItem value="48">48 months (4 years)</SelectItem>
-                    <SelectItem value="60">60 months (5 years)</SelectItem>
-                    <SelectItem value="72">72 months (6 years)</SelectItem>
-                    <SelectItem value="84">84 months (7 years)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Additional Costs Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Additional Costs</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="salesTax">Sales Tax (%)</Label>
-                <Input
-                  id="salesTax"
-                  type="number"
-                  value={salesTax}
-                  onChange={(e) => setSalesTax(Number(e.target.value))}
-                  step="0.1"
-                  min="0"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="otherFees">Other Fees</Label>
-                <Input
-                  id="otherFees"
-                  type="number"
-                  value={otherFees}
-                  onChange={(e) => setOtherFees(Number(e.target.value))}
-                  min="0"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Documentation, registration, and other dealer fees
-                </p>
+            <CardContent>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Vehicle Price */}
+                <div style={{ marginBottom: "8px" }}>
+                  <Label htmlFor="vehiclePrice" style={{ display: "block", marginBottom: "4px" }}>Vehicle Price</Label>
+                  <Input
+                    id="vehiclePrice"
+                    type="number"
+                    value={vehiclePrice}
+                    onChange={(e) => setVehiclePrice(Number(e.target.value))}
+                  />
+                </div>
+                
+                {/* Down Payment */}
+                <div style={{ marginBottom: "8px" }}>
+                  <Label htmlFor="downPayment" style={{ display: "block", marginBottom: "4px" }}>Down Payment</Label>
+                  <Input
+                    id="downPayment"
+                    type="number"
+                    value={downPayment}
+                    onChange={(e) => setDownPayment(Number(e.target.value))}
+                  />
+                  <p style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                    {((downPayment / vehiclePrice) * 100).toFixed(1)}% of vehicle price
+                  </p>
+                </div>
+                
+                {/* Trade-in Value */}
+                <div style={{ marginBottom: "8px" }}>
+                  <Label htmlFor="tradeInValue" style={{ display: "block", marginBottom: "4px" }}>Trade-in Value</Label>
+                  <Input
+                    id="tradeInValue"
+                    type="number"
+                    value={tradeInValue}
+                    onChange={(e) => setTradeInValue(Number(e.target.value))}
+                  />
+                </div>
+                
+                {/* Interest Rate */}
+                <div style={{ marginBottom: "8px" }}>
+                  <Label htmlFor="interestRate" style={{ display: "block", marginBottom: "4px" }}>Annual Interest Rate (%)</Label>
+                  <Input
+                    id="interestRate"
+                    type="number"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                    step="0.1"
+                    min="0.1"
+                  />
+                </div>
+                
+                {/* Loan Term */}
+                <div style={{ marginBottom: "8px" }}>
+                  <Label htmlFor="months" style={{ display: "block", marginBottom: "4px" }}>Loan Term (months)</Label>
+                  <Input
+                    id="months"
+                    type="number"
+                    value={months}
+                    onChange={(e) => setMonths(Number(e.target.value))}
+                    min="1"
+                  />
+                </div>
+                
+                {/* Initial Charges Section */}
+                <div style={{ borderTop: "1px solid #ddd", paddingTop: "16px", marginTop: "16px" }}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "18px", fontWeight: "500", marginBottom: "8px" }}>Initial Charges</h3>
+                    <p style={{ fontSize: "14px", color: "#666" }}>Configure initial charges and how they're applied to the loan</p>
+                  </div>
+                  
+                  <RadioGroup 
+                    value={showInitialCharges ? "yes" : "no"}
+                    onValueChange={(value) => setShowInitialCharges(value === "yes")}
+                    className="mb-4"
+                  >
+                    <div style={{ display: "flex", gap: "32px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <RadioGroupItem value="yes" id="showInitialChargesYes" />
+                        <Label htmlFor="showInitialChargesYes">Include Initial Charges</Label>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <RadioGroupItem value="no" id="showInitialChargesNo" />
+                        <Label htmlFor="showInitialChargesNo">No Initial Charges</Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                  
+                  {showInitialCharges && (
+                    <div style={{ backgroundColor: "#f8f8f8", padding: "16px", borderRadius: "4px", border: "1px solid #ddd", marginTop: "16px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                        <div>
+                          <Label htmlFor="serviceCharges" style={{ display: "block", marginBottom: "4px" }}>Service Charges</Label>
+                          <Input
+                            id="serviceCharges"
+                            type="number"
+                            value={serviceCharges}
+                            onChange={(e) => setServiceCharges(Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="documentCharges" style={{ display: "block", marginBottom: "4px" }}>Document Charges</Label>
+                          <Input
+                            id="documentCharges"
+                            type="number"
+                            value={documentCharges}
+                            onChange={(e) => setDocumentCharges(Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="rmvCharges" style={{ display: "block", marginBottom: "4px" }}>RMV Charges</Label>
+                          <Input
+                            id="rmvCharges"
+                            type="number"
+                            value={rmvCharges}
+                            onChange={(e) => setRmvCharges(Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="insurancePremium" style={{ display: "block", marginBottom: "4px" }}>Insurance Premium</Label>
+                          <Input
+                            id="insurancePremium"
+                            type="number"
+                            value={insurancePremium}
+                            onChange={(e) => setInsurancePremium(Number(e.target.value))}
+                          />
+                        </div>
+                        {/* Added Introducer Commission field */}
+                        <div>
+                          <Label htmlFor="introducerCommission" style={{ display: "block", marginBottom: "4px" }}>Introducer Commission</Label>
+                          <Input
+                            id="introducerCommission"
+                            type="number"
+                            value={introducerCommission}
+                            onChange={(e) => setIntroducerCommission(Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="otherCharges" style={{ display: "block", marginBottom: "4px" }}>Other Charges</Label>
+                          <Input
+                            id="otherCharges"
+                            type="number"
+                            value={otherCharges}
+                            onChange={(e) => setOtherCharges(Number(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: "500" }}>
+                          Total Initial Charges: {formatCurrency(serviceCharges + documentCharges + rmvCharges + insurancePremium + introducerCommission + otherCharges)}
+                        </p>
+                        
+                        <div>
+                          <Select 
+                            value={initialChargesOption} 
+                            onValueChange={setInitialChargesOption}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="capitalize">Capitalize Initial Charges</SelectItem>
+                              <SelectItem value="separate">Client Pays Separately</SelectItem>
+                              <SelectItem value="withdraw">Withdraw from Capital</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
         
         {/* Right column - Results */}
-        <div className="space-y-6">
-          {/* Loan Summary Section */}
+        <div>
           <Card>
             <CardHeader>
-              <CardTitle>Loan Summary</CardTitle>
+              <CardTitle>Auto Loan Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent>
               {results ? (
-                <>
-                  {/* Monthly Payment Display */}
-                  <Card className="bg-emerald-50 border-emerald-200">
-                    <CardContent className="p-4">
-                      <p className="text-sm font-medium text-emerald-800">Monthly Payment</p>
-                      <p className="text-3xl font-bold text-emerald-700">{formatCurrency(results.monthlyPayment)}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Client Receiving Amount */}
+                  <Card style={{ backgroundColor: "#f0fff4", border: "1px solid #c6f6d5" }}>
+                    <CardContent style={{ padding: "16px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: "500", color: "#22543d" }}>Client Will Receive</p>
+                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#276749" }}>{formatCurrency(clientReceiving)}</p>
                     </CardContent>
                   </Card>
                   
-                  {/* Key Values Grid */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <Card style={{ backgroundColor: "#f8fafc" }}>
+                    <CardContent style={{ padding: "16px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: "500" }}>Monthly Payment</p>
+                      <p style={{ fontSize: "24px", fontWeight: "700" }}>{formatCurrency(results.payment)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Total of {results.totalPaymentPeriods} payments</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                     <div>
-                      <p className="text-sm text-muted-foreground">Vehicle Price</p>
-                      <p className="font-medium">{formatCurrency(results.vehiclePrice)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Vehicle Price</p>
+                      <p>{formatCurrency(vehiclePrice)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Down Payment</p>
-                      <p className="font-medium">{formatCurrency(results.downPayment)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Loan Amount</p>
+                      <p>{formatCurrency(loanAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Trade-in Value</p>
-                      <p className="font-medium">{formatCurrency(results.tradeInValue)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Down Payment</p>
+                      <p>{formatCurrency(downPayment)}</p>
+                    </div>
+                    {tradeInValue > 0 && (
+                      <div>
+                        <p style={{ fontSize: "14px", color: "#666" }}>Trade-in Value</p>
+                        <p>{formatCurrency(tradeInValue)}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Initial Charges</p>
+                      <p style={{ color: getInitialChargesDisplay().color === "text-green-600" ? "#059669" : 
+                                 getInitialChargesDisplay().color === "text-red-600" ? "#dc2626" : "#666" }}>
+                        {getInitialChargesDisplay().text}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Sales Tax</p>
-                      <p className="font-medium">{formatCurrency(results.salesTaxAmount)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Interest Rate</p>
+                      <p>{interestRate}% Annual</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Other Fees</p>
-                      <p className="font-medium">{formatCurrency(results.otherFees)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Interest Rate</p>
-                      <p className="font-medium">{formatPercentage(results.annualInterestRate)}</p>
+                      <p style={{ fontSize: "14px", color: "#666" }}>Total Interest</p>
+                      <p>{formatCurrency(results.totalInterest)}</p>
                     </div>
                   </div>
                   
-                  <Separator />
-                  
-                  {/* Financing Summary */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Amount Financed</p>
-                      <p className="text-xl font-medium">{formatCurrency(results.amountFinanced)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Loan Term</p>
-                      <p className="text-xl font-medium">{results.loanTermMonths} months ({(results.loanTermMonths / 12).toFixed(1)} years)</p>
-                    </div>
-                  </div>
-                  
-                  {/* Cost Summary Card */}
-                  <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm font-medium text-blue-800">Total Principal</p>
-                          <p className="font-semibold">{formatCurrency(results.amountFinanced)}</p>
+                  <Card style={{ backgroundColor: "#ebf8ff", border: "1px solid #90cdf4" }}>
+                    <CardContent style={{ padding: "16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <p style={{ fontSize: "14px", fontWeight: "500", color: "#2c5282" }}>TOTAL PAYABLE</p>
+                          <p style={{ fontSize: "20px", fontWeight: "700" }}>{formatCurrency(results.totalPayable)}</p>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm font-medium text-blue-800">Total Interest</p>
-                          <p className="font-semibold">{formatCurrency(results.totalInterest)}</p>
-                        </div>
-                        <Separator className="my-1 bg-blue-200" />
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm font-medium text-blue-900">TOTAL COST</p>
-                          <p className="text-xl font-bold text-blue-900">{formatCurrency(results.totalLoanCost)}</p>
+                        <div>
+                          <p style={{ fontSize: "14px", fontWeight: "500", color: "#2c5282" }}>Effective Rate</p>
+                          <p style={{ fontSize: "18px", fontWeight: "700" }}>{(results.totalInterest / loanAmount * 100).toFixed(2)}%</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                </>
+                  
+                  <div style={{ marginTop: "8px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>Loan Details</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "14px" }}>
+                      <div>
+                        <span style={{ color: "#666" }}>Payment Frequency:</span>
+                        <span style={{ marginLeft: "4px" }}>Monthly Payments</span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#666" }}>Loan Term:</span>
+                        <span style={{ marginLeft: "4px" }}>{months} months</span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#666" }}>Vehicle Amount:</span>
+                        <span style={{ marginLeft: "4px" }}>{formatCurrency(vehiclePrice)}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: "#666" }}>Total Principal:</span>
+                        <span style={{ marginLeft: "4px" }}>{formatCurrency(results.totalPrincipal)}</span>
+                      </div>
+                      
+                      {showInitialCharges && (
+                        <div>
+                          <span style={{ color: "#666" }}>Initial Charges Option:</span>
+                          <span style={{ marginLeft: "4px" }}>
+                            {initialChargesOption === 'capitalize' ? 'Capitalize Initial Charges' : 
+                             initialChargesOption === 'separate' ? 'Client Pays Separately' : 
+                             'Withdraw from Capital'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {showInitialCharges && (
+                        <div>
+                          <span style={{ color: "#666" }}>Initial Charges Amount:</span>
+                          <span style={{ marginLeft: "4px" }}>{formatCurrency(results.initialPayment)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={() => setShowFullAmortization(!showFullAmortization)}
+                    style={{ 
+                      width: "100%", 
+                      marginTop: "16px",
+                      backgroundColor: "#047857"
+                    }}
+                  >
+                    {showFullAmortization ? "Hide Amortization Schedule" : "Show Full Amortization Schedule"}
+                  </Button>
+                  
+                  <Button 
+                    style={{ 
+                      width: "100%", 
+                      marginTop: "8px",
+                      backgroundColor: "#2563eb"
+                    }}
+                  >
+                    Apply for This Auto Loan
+                  </Button>
+                </div>
               ) : (
                 <p>Calculating results...</p>
               )}
             </CardContent>
           </Card>
-          
-          {/* Charts Section - Use the imported AmortizationCharts component */}
-          {results && (
-            <AmortizationCharts amortizationData={results} />
-          )}
-          
-          {/* Amortization Schedule Toggle */}
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="showAmortization" 
-              checked={showAmortizationSchedule}
-              onCheckedChange={setShowAmortizationSchedule}
-            />
-            <Label htmlFor="showAmortization" className="cursor-pointer">
-              Show Amortization Schedule
-            </Label>
-          </div>
-          
-          {/* Amortization Schedule Table - Detailed payment breakdown */}
-          {showAmortizationSchedule && results && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Amortization Schedule</span>
-                  <Select 
-                    value={scheduleView} 
-                    onValueChange={setScheduleView}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="View" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly View</SelectItem>
-                      <SelectItem value="quarterly">Quarterly View</SelectItem>
-                      <SelectItem value="yearly">Yearly View</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardTitle>
-                <CardDescription>
-                  Detailed breakdown of each payment over the life of your loan
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Payment #</TableHead>
-                        <TableHead>Payment</TableHead>
-                        <TableHead>Principal</TableHead>
-                        <TableHead>Interest</TableHead>
-                        <TableHead>Remaining Balance</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getFilteredSchedule().map((payment) => (
-                        <TableRow key={payment.paymentNumber}>
-                          <TableCell>{payment.paymentNumber}</TableCell>
-                          <TableCell>{formatCurrency(payment.paymentAmount)}</TableCell>
-                          <TableCell>{formatCurrency(payment.principalPayment)}</TableCell>
-                          <TableCell>{formatCurrency(payment.interestPayment)}</TableCell>
-                          <TableCell>{formatCurrency(payment.remainingBalance)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Call to Action Button */}
-          <Button className="w-full">Get Pre-Approved For This Auto Loan</Button>
         </div>
+      </div>
+      
+      {/* Full-width Amortization Table at the bottom */}
+      {results && showFullAmortization && (
+        <div style={{ marginTop: "20px" }}>
+          <Card>
+            <CardHeader>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <CardTitle>Complete Amortization Schedule</CardTitle>
+                <Button 
+                  onClick={() => setShowFullAmortization(false)} 
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </div>
+              <CardDescription>
+                Full payment breakdown showing principal and interest for each payment over the entire loan term
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", fontSize: "14px", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ 
+                      borderBottom: "2px solid #ddd", 
+                      backgroundColor: "#f8fafc",
+                      position: "sticky",
+                      top: "0"
+                    }}>
+                      <th style={{ textAlign: "center", fontWeight: "600", padding: "12px", backgroundColor: "#f1f5f9" }}>Payment #</th>
+                      <th style={{ textAlign: "right", fontWeight: "600", padding: "12px", backgroundColor: "#f1f5f9" }}>Payment Amount</th>
+                      <th style={{ textAlign: "right", fontWeight: "600", padding: "12px", backgroundColor: "#f1f5f9" }}>Principal</th>
+                      <th style={{ textAlign: "right", fontWeight: "600", padding: "12px", backgroundColor: "#f1f5f9" }}>Interest</th>
+                      <th style={{ textAlign: "right", fontWeight: "600", padding: "12px", backgroundColor: "#f1f5f9" }}>Remaining Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Display the actual amortization schedule from results */}
+                    {results.amortizationSchedule.map((period, index) => (
+                      <tr 
+                        key={period.period} 
+                        style={{ 
+                          borderBottom: "1px solid #ddd",
+                          backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" 
+                        }}
+                      >
+                        <td style={{ textAlign: "center", padding: "10px" }}>{period.period}</td>
+                        <td style={{ textAlign: "right", padding: "10px" }}>{formatCurrency(period.payment)}</td>
+                        <td style={{ textAlign: "right", padding: "10px" }}>{formatCurrency(period.principal)}</td>
+                        <td style={{ textAlign: "right", padding: "10px" }}>{formatCurrency(period.interest)}</td>
+                        <td style={{ textAlign: "right", padding: "10px" }}>{formatCurrency(period.balance)}</td>
+                      </tr>
+                    ))}
+                    
+                    {/* Summary row at the bottom */}
+                    <tr style={{ 
+                      borderTop: "2px solid #ddd", 
+                      backgroundColor: "#e0f2fe",
+                      fontWeight: "bold"
+                    }}>
+                      <td style={{ textAlign: "center", padding: "12px" }}>TOTAL</td>
+                      <td style={{ textAlign: "right", padding: "12px" }}>{formatCurrency(results.payment * results.totalPaymentPeriods)}</td>
+                      <td style={{ textAlign: "right", padding: "12px" }}>{formatCurrency(results.totalPrincipal)}</td>
+                      <td style={{ textAlign: "right", padding: "12px" }}>{formatCurrency(results.totalInterest)}</td>
+                      <td style={{ textAlign: "right", padding: "12px" }}>-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Sign-up for loan section */}
+      <div style={{ 
+        marginTop: "40px",
+        padding: "30px 20px",
+        backgroundColor: "#f0f9ff",
+        borderRadius: "8px",
+        textAlign: "center"
+      }}>
+        <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>Ready to Move Forward?</h2>
+        <p style={{ fontSize: "16px", maxWidth: "600px", margin: "0 auto 20px auto" }}>
+          Apply now to secure your auto loan with our competitive rates and flexible terms.
+        </p>
+        <Button style={{ 
+          backgroundColor: "#2563eb", 
+          fontSize: "16px", 
+          padding: "10px 24px" 
+        }}>
+          Apply for Auto Loan
+        </Button>
       </div>
     </div>
   );

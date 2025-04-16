@@ -9,11 +9,15 @@ import {
   Filter,
   X,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft  // Added Arrow Left icon
 } from "lucide-react";
 import { LogoutUSR } from "../main/AuthContext";
+import { useRouter } from "next/navigation"; // Import router for navigation
 
 export default function Topnav() {
+  const router = useRouter(); // Initialize router
+  
   const [user, setUser] = useState({
     name: "Chandimal Pathegama",
     email: "chandimal@email.com",
@@ -67,6 +71,10 @@ export default function Topnav() {
     }
   };
 
+  // Handle back button click
+  const handleGoBack = () => {
+    router.back();
+  };
  
   return (
     <>
@@ -79,11 +87,22 @@ export default function Topnav() {
       )}
 
       <header className="bg-white shadow-md py-3 px-4 flex justify-between items-center sticky top-0 z-10">
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
+          {/* Back Button */}
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden mr-2 hover:bg-gray-100 active:bg-gray-200 rounded-full"
+            className="hover:bg-gray-100 active:bg-gray-200 rounded-full"
+            onClick={handleGoBack}
+            title="Go Back"
+          >
+            <ChevronLeft  className="h-5 w-5 text-gray-600" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden hover:bg-gray-100 active:bg-gray-200 rounded-full"
             onClick={toggleSidebar}
           >
             <Menu className="h-5 w-5" />
