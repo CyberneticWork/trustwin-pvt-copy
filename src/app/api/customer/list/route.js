@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import mysql from "mysql2/promise";
+import { connectDB } from "@/lib/db";
 
 // DB config (customize as needed)
 const dbConfig = {
@@ -19,7 +19,7 @@ const VALID_LOAN_STATUSES = [
 export async function GET() {
   let connection;
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await connectDB();
 
     // Get all clients
     const [clients] = await connection.execute(
@@ -46,7 +46,7 @@ export async function GET() {
     return NextResponse.json(enrichedClients);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to load clients" , error: err}, { status: 500 });
+    return NextResponse.json({ error: "Failed to load clients", error: err }, { status: 500 });
   } finally {
     if (connection) await connection.end();
   }
