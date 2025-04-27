@@ -13,10 +13,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import provinceDistrictData from "@/lib/jsons/srt_pro_dist.json";
 import bankList from "@/lib/jsons/banklist.json";
+import { useRouter } from "next/navigation";
 
 export function AddClient({ onSubmit, onCancel, initialNIC  }) {
   // State to track the current step
   const [currentStep, setCurrentStep] = useState(0);
+  const router = useRouter();
   // Province/district state
   const provinces = provinceDistrictData["Sri Lanka"].Provinces.map(p => p.name);
   const [selectedProvince, setSelectedProvince] = useState("");
@@ -846,7 +848,25 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
 
   const [showPreview, setShowPreview] = useState(false);
 
-  const renderPreviewWindow = () => {
+  // Add this handler to fetch customerId before showing preview
+  const handlePreview = async () => {
+    try {
+      const res = await fetch(`/api/customer/${formData.idNo}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.customer && data.customer.id) {
+          setCustomerId(data.customer.id);
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    setShowPreview(true);
+  };
+
+  const renderPreviewWindow = (customerId) => {
+    
+    customerId = `C-${customerId.toString().padStart(3, '0')}`
     return (
       <Card className="border-2 border-blue-400 shadow-lg">
         <CardHeader>
@@ -858,6 +878,7 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
             <h3 className="text-base font-semibold text-blue-700 mb-2">Personal Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
               <div className="space-y-1">
+                <p className="text-sm"><span className="font-medium">Customer ID:</span> {customerId ? customerId : "N/A"}</p>
                 <p className="text-sm"><span className="font-medium">Full Name:</span> {formData.fullName}</p>
                 <p className="text-sm"><span className="font-medium">ID:</span> {formData.idNo}</p>
                 <p className="text-sm"><span className="font-medium">Gender:</span> {formData.gender}</p>
@@ -906,29 +927,15 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
           <Button type="button" onClick={() => setShowPreview(false)} variant="outline">
             Edit
           </Button>
-          <Button type="submit" onClick={handleSubmit} className="bg-green-600 hover:bg-green-700 text-white">
-            Confirm & Save
+          <Button type="submit" onClick={() => router.push(`/loans/${customerId}`)} className="bg-green-600 hover:bg-green-700 text-white">
+            Create Loan
           </Button>
         </CardFooter>
       </Card>
     );
   };
 
-  const renderCurrentStep = () => {
-    if (showPreview) return renderPreviewWindow();
-    switch (currentStep) {
-      case 0:
-        return renderPersonalDetails();
-      case 1:
-        return renderBankDetails();
-      case 2:
-        return renderRelationDetails();
-      case 3:
-        return renderReviewSection();
-      default:
-        return renderPersonalDetails();
-    }
-  };
+  const [showReview, setShowReview] = useState(false);
 
   const renderReviewSection = () => {
     const allSectionsComplete = sectionStatus.personal && sectionStatus.bank && sectionStatus.relation;
@@ -1000,13 +1007,29 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
             type="button"
             disabled={!allSectionsComplete}
             className={cn(!allSectionsComplete && "opacity-50 cursor-not-allowed")}
-            onClick={() => setShowPreview(true)}
+            onClick={handlePreview}
           >
             Preview & Confirm
           </Button>
         </CardFooter>
       </Card>
     );
+  };
+
+  const renderCurrentStep = () => {
+    if (showPreview) return renderPreviewWindow(customerId);
+    switch (currentStep) {
+      case 0:
+        return renderPersonalDetails();
+      case 1:
+        return renderBankDetails();
+      case 2:
+        return renderRelationDetails();
+      case 3:
+        return renderReviewSection();
+      default:
+        return renderPersonalDetails();
+    }
   };
 
   return (

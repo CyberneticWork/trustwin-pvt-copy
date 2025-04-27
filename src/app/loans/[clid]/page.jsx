@@ -30,7 +30,7 @@ export default function Home() {
       description: "Flexible leasing options for your business needs.",
       icon: BarChart3,  // Changed to bar chart for financial growth representation
       color: "bg-green-500",
-      path: 'loans/auto-loan'
+      path: 'loans/high-draft'
     }
   ];
   
@@ -40,7 +40,7 @@ export default function Home() {
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="mb-6">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-            Credits 
+              Financial Solutions
             </h1>
             <p className="text-sm text-gray-500">
               Select the financial product that best suits your needs.
@@ -123,7 +123,7 @@ export function HighDraft() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-semibold  text-gray-800">
-                Auto Draft (Leasing)
+                High Draft (Leasing)
               </h1>
               <p className="text-sm text-gray-500">
                 Get the best leasing solutions tailored for your business needs.

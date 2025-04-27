@@ -73,6 +73,7 @@ export function SearchClient({ clients, onAddNewClick }) {
   const handleCreateLoan = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
+    router.push(`/loans/${`C-${client.id.toString().padStart(3, '0')}`}`);
     console.log("Create loan for client:", client);
   };
 
@@ -132,9 +133,9 @@ export function SearchClient({ clients, onAddNewClick }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClients.length > 0 ? (
                 filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 group cursor-pointer" onClick={(e) => handleMenuOpen(e, client)}>
+                  <tr key={`C-${client.id.toString().padStart(3, '0')}`} className="hover:bg-gray-50 group cursor-pointer" onClick={(e) => handleMenuOpen(e, client)}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
-                      {client.id}
+                      {`C-${client.id.toString().padStart(3, '0')}`}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {/* Show name or fullname */}
