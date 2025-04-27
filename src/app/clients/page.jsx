@@ -1,7 +1,7 @@
-// app/clients/page.jsx
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { AddClient } from "@/components/client/add-client";
@@ -9,61 +9,29 @@ import { SearchClient } from "@/components/client/search-client";
 
 export default function ClientPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  
-  // Sample client data
-  const clients = [
-    {
-      id: "C-1234",
-      name: "Kaduruwanage Lasantha",
-      idNo: "197631001622",
-      gender: "Male",
-      location: "JE",
-      district: "Gampaha",
-      activeLoans: 1,
-    },
-    {
-      id: "C-1235",
-      name: "Sujani Fernando",
-      idNo: "198242005789",
-      gender: "Female",
-      location: "JE",
-      district: "Gampaha",
-      activeLoans: 0,
-    },
-    {
-      id: "C-1236",
-      name: "Mahesh Perera",
-      idNo: "199010234567",
-      gender: "Male",
-      location: "NG", 
-      district: "Colombo",
-      activeLoans: 2,
-    },
-    {
-      id: "C-1237",
-      name: "Dilani Gunathilaka",
-      idNo: "198756321098",
-      gender: "Female",
-      location: "NG",
-      district: "Colombo",
-      activeLoans: 1,
-    },
-    {
-      id: "C-1238",
-      name: "Manoj Samarawickrama",
-      idNo: "197845632109",
-      gender: "Male",
-      location: "JE",
-      district: "Gampaha",
-      activeLoans: 3,
-    },
-  ];
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchClients() {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/customer/list");
+        const data = await res.json();
+        setClients(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setClients([]);
+      }
+      setLoading(false);
+    }
+    fetchClients();
+  }, []);
 
   const handleSubmit = (formData) => {
     // Logic to save the client data
     console.log("Client data:", formData);
     alert("Client created successfully!");
-    setShowCreateForm(false);
+    // setShowCreateForm(false);
   };
 
   return (
@@ -96,14 +64,19 @@ export default function ClientPage() {
         </div>
 
         {!showCreateForm ? (
-          <SearchClient 
-            clients={clients} 
-            onAddNewClick={() => setShowCreateForm(true)} 
-          />
+          loading ? (
+            <div className="text-center py-10 text-gray-500">Loading clients...</div>
+          ) : (
+            <SearchClient 
+              clients={clients} 
+              onAddNewClick={() => setShowCreateForm(true)} 
+            />
+          )
         ) : (
           <AddClient 
             onSubmit={handleSubmit}
             onCancel={() => setShowCreateForm(false)} 
+            initialNIC={null}
           />
         )}
       </main>

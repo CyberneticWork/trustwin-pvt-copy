@@ -1,0 +1,43 @@
+{
+    "Sri Lanka": {
+      "Provinces": [
+        {
+          "name": "Central Province",
+          "districts": ["Kandy", "Matale", "Nuwara Eliya"]
+        },
+        {
+          "name": "Eastern Province",
+          "districts": ["Ampara", "Batticaloa", "Trincomalee"]
+        },
+        {
+          "name": "Northern Province",
+          "districts": ["Jaffna", "Kilinochchi", "Mannar", "Mullaitivu", "Vavuniya"]
+        },
+        {
+          "name": "North Central Province",
+          "districts": ["Anuradhapura", "Polonnaruwa"]
+        },
+        {
+          "name": "North Western Province",
+          "districts": ["Kurunegala", "Puttalam"]
+        },
+        {
+          "name": "Sabaragamuwa Province",
+          "districts": ["Kegalle", "Ratnapura"]
+        },
+        {
+          "name": "Southern Province",
+          "districts": ["Galle", "Matara", "Hambantota"]
+        },
+        {
+          "name": "Uva Province",
+          "districts": ["Badulla", "Monaragala"]
+        },
+        {
+          "name": "Western Province",
+          "districts": ["Colombo", "Gampaha", "Kalutara"]
+        }
+      ]
+    }
+  }
+  
