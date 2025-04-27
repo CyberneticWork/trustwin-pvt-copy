@@ -1,8 +1,9 @@
 import { connectDB } from "@/lib/db";
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   let connection;
   try {
+    const params = await context.params;
     const { nic } = params;
     if (!nic) {
       return Response.json({ error: "NIC is required", code: "INVALID_INPUT" }, { status: 400 });
