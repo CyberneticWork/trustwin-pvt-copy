@@ -177,7 +177,6 @@
 
 button {
   font-weight: bold;
-  /*border-radius: 9px;  Fully rounded */
   padding: 8px 16px; /* Add some padding */
 } 
 
@@ -239,89 +238,16 @@ form .space-y-2 > * + * {
   margin-top: 0.75rem !important;
 }
 
-/* Fix checkbox styling to ensure square appearance */
-.checkbox-fix {
-  /* Reset all checkbox styling */
-  [role="checkbox"],
-  [data-state="checked"],
-  [data-state="unchecked"],
-  input[type="checkbox"] {
-    appearance: checkbox !important;
-    -webkit-appearance: checkbox !important;
-    border-radius: 0 !important;
-    width: 16px !important;
-    height: 16px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: inline !important;
-    vertical-align: middle !important;
-  }
-  
-  /* Ensure ShadCN checkbox is square */
-  [data-radix-checkbox-root] {
-    width: 16px !important;
-    height: 16px !important;
-    border-radius: 2px !important;
-    border: 1px solid #aaa !important;
-    background: white !important;
-  }
-  
-  /* Style the indicator/check part */
-  [data-radix-checkbox-root][data-state="checked"] {
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-  }
-  
-  /* Fix SVG sizing inside checkbox */
-  [role="checkbox"] svg {
-    width: 12px !important;
-    height: 12px !important;
-  }
-  
-  /* Remove any rounded styling */
-  [role="checkbox"]::before,
-  [role="checkbox"]::after {
-    border-radius: 0 !important;
-  }
-}
 
-/* Apply fix to all checkbox containers */
-.checkbox-container,
-.checkbox-wrapper,
-[data-radix-checkbox-primitive],
-form label:has(input[type="checkbox"]),
-div:has([role="checkbox"]) {
-  composes: checkbox-fix;
-}
 
-/* Ensure specific checkbox styling for the loan application page */
-#apply-for-loan-page [role="checkbox"],
-.apply-for-loan [role="checkbox"] {
+/* Fix checkbox styling */
+[role="checkbox"], 
+.checkbox, 
+input[type="checkbox"] {
+  appearance: checkbox !important;
+  -webkit-appearance: checkbox !important;
   width: 16px !important;
   height: 16px !important;
-  border-radius: 2px !important;
-  display: inline-block !important;
-  position: relative !important;
-  background-color: white !important;
-  border: 1px solid #aaa !important;
-  margin-right: 8px !important;
-}
-
-/* Specific fix for the agree to terms checkbox */
-#agreeToTerms,
-[for="agreeToTerms"] + [role="checkbox"],
-div:has(label[for="agreeToTerms"]) [role="checkbox"] {
-  width: 16px !important;
-  height: 16px !important;
-  border-radius: 2px !important;
-  background-color: white !important;
-  border: 1px solid #aaa !important;
-}
-
-/* Directly target any circular or rounded elements */
-[role="checkbox"].rounded-full,
-[role="checkbox"] [class*="rounded"],
-[role="checkbox"].rounded,
-[role="checkbox"] [class*="rounded-full"] {
-  border-radius: 2px !important;
+  padding: 0 !important;
+  border-radius: 3px !important;
 }
