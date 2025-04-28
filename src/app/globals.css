@@ -131,30 +131,24 @@
   }
 }
 
-
-
 /* Changes Done by me */
 
-
 @layer base {
-  /* Apply 'Product Sans' as the default font family for the entire document */
+  /* Apply 'San Francisco' as the default font family */
   *,
   *::before,
   *::after {
-    font-family: "poppins";
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "San Francisco", "SF Pro Text", system-ui, sans-serif;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 500; /* Adjusted from 600 for SF font which appears heavier */
     margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
 
   b, strong {
-    font-weight: 500 !important; /* Reduce boldness */
+    font-weight: 600 !important; /* Adjusted for SF font */
   }
-
-  /* Include Google Fonts or a custom font import for Product Sans */
-  @import url('https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700&display=swap'); /* Adjust weights as needed */
 }
 
 @layer components {
@@ -163,7 +157,6 @@
 @layer utilities {
   /* Utility classes for spacing, margins, padding, etc. */
 }
-
 
 .scrollbar-container::-webkit-scrollbar {
   width: 6px;
@@ -184,10 +177,9 @@
 
 button {
   font-weight: bold;
-  border-radius: 9999px; /* Fully rounded */
+  /*border-radius: 9px;  Fully rounded */
   padding: 8px 16px; /* Add some padding */
 } 
-
 
 /* Form Field Spacing Improvements */
 
