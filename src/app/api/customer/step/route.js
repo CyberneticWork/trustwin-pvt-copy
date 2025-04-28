@@ -19,6 +19,7 @@ export async function POST(req) {
     let updateFields = {};
     if (step === "personal") {
       updateFields = {
+        prefix: val(customer.prefix, "Mr"),
         fullname: val(customer.fullname, ""),
         gender: val(customer.gender, 1),
         dob: val(customer.dob, "0000-00-00"),
@@ -28,22 +29,9 @@ export async function POST(req) {
         ds: val(customer.ds),
         district: val(customer.district),
         province: val(customer.province),
-        utiltype: val(customer.utiltype),
-        bankactype: "N/A",
-        bank: "N/A",
-        branch: "N/A",
-        acno: "N/A",
+        telno: val(customer.telno, ""),
         status: "draft",
         createby: val(customer.createby, "system"),
-        editby: val(customer.editby, "system")
-      };
-    } else if (step === "bank") {
-      updateFields = {
-        bankactype: val(customer.bankactype),
-        bank: val(customer.bank),
-        branch: val(customer.branch),
-        acno: val(customer.acno),
-        status: "draft",
         editby: val(customer.editby, "system")
       };
     } else if (step === "relation") {
@@ -59,9 +47,9 @@ export async function POST(req) {
       );
       await connection.end();
       return Response.json({ message: "Status updated successfully", code: "SUCCESS" }, { status: 200 });
-    } else {
-      // Final/full submit, but status always draft
+    } else if (step === "review") {
       updateFields = {
+        prefix: val(customer.prefix, "Mr"),
         fullname: val(customer.fullname, ""),
         gender: val(customer.gender, 1),
         dob: val(customer.dob, "0000-00-00"),
@@ -71,15 +59,13 @@ export async function POST(req) {
         ds: val(customer.ds),
         district: val(customer.district),
         province: val(customer.province),
-        utiltype: val(customer.utiltype),
-        bankactype: val(customer.bankactype),
-        bank: val(customer.bank),
-        branch: val(customer.branch),
-        acno: val(customer.acno),
+        telno: val(customer.telno, ""),
         status: "draft",
         createby: val(customer.createby, "system"),
         editby: val(customer.editby, "system")
       };
+    } else {
+      return Response.json({ error: "Invalid step or missing required fields", code: "INVALID_STEP" }, { status: 400 });
     }
 
     if (rows.length > 0) {
@@ -95,6 +81,7 @@ export async function POST(req) {
     } else {
       // Insert new customer (fill all fields)
       const allFields = {
+        prefix: val(customer.prefix, "Mr"),
         fullname: val(customer.fullname, ""),
         nic: customer.nic,
         gender: val(customer.gender, 1),
@@ -105,11 +92,7 @@ export async function POST(req) {
         ds: val(customer.ds),
         district: val(customer.district),
         province: val(customer.province),
-        utiltype: val(customer.utiltype),
-        bankactype: val(customer.bankactype, "N/A"),
-        bank: val(customer.bank, "N/A"),
-        branch: val(customer.branch, "N/A"),
-        acno: val(customer.acno, "N/A"),
+        telno: val(customer.telno, ""),
         status: "draft",
         createby: val(customer.createby, "system"),
         editby: val(customer.editby, "system")
@@ -128,7 +111,10 @@ export async function POST(req) {
       // Get customer id for relation
       const [custRows] = await connection.execute("SELECT id FROM customer WHERE nic = ?", [customer.nic]);
       const customerId = custRows.length > 0 ? custRows[0].id : null;
-      if (!customerId) throw new Error("Customer not found for spouse relation");
+      if (!customerId) {
+        await connection.end();
+        return Response.json({ error: "Customer not found for spouse relation", code: "NOT_FOUND" }, { status: 404 });
+      }
       // Check if spouse already exists for this spouse nic and customer id
       const [spouseRows] = await connection.execute("SELECT id FROM spouse WHERE nic = ? AND customers = ?", [spouse.nic, customerId]);
       if (spouseRows.length > 0) {
@@ -145,10 +131,23 @@ export async function POST(req) {
     }
 
     await connection.end();
-    return Response.json({ message: "Saved successfully", code: "SUCCESS" }, { status: 200 });
+    return Response.json({ message: "Saved successfully", code: "SUCCESS", customerId }, { status: 200 });
   } catch (error) {
     if (connection) try { await connection.end(); } catch (e) {}
     console.error("Customer Step API Error:", error);
-    return Response.json({ error: error.message, code: error.code || "SERVER_ERROR" }, { status: 500 });
+    let status = 500;
+    let errorMsg = error.message || "Internal server error";
+    let code = error.code || "SERVER_ERROR";
+    if (errorMsg.includes("ER_DUP_ENTRY")) {
+      status = 409;
+      code = "DUPLICATE_ENTRY";
+      errorMsg = "A customer with this NIC already exists.";
+    } else if (errorMsg.includes("not found for spouse relation")) {
+      status = 404;
+      code = "NOT_FOUND";
+    } else if (code === "INVALID_INPUT" || code === "INVALID_STEP") {
+      status = 400;
+    }
+    return Response.json({ error: errorMsg, code }, { status });
   }
 }

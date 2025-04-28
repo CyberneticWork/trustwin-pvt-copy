@@ -6,30 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search } from "lucide-react";
 import { useRouter } from 'next/navigation'
+import { Button } from "@/components/ui/button";
 
-export function SearchClient({ clients, onAddNewClick }) {
-  const [filterText, setFilterText] = useState("");
+export function SearchClient({ clients, onAddNewClick, loading, onSearch, searchFilter, setSearchFilter, searchQuery, setSearchQuery, error }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClient, setMenuClient] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
-  const router = useRouter()
-
-  // Filter clients based on search text
-  const filteredClients = clients.filter(client => {
-    if (!filterText) return true;
-    const searchTerm = filterText.toLowerCase();
-    // Support both legacy and new API fields
-    const name = client.name || client.fullname || "";
-    const idNo = client.idNo || client.nic || "";
-    return (
-      name.toLowerCase().includes(searchTerm) ||
-      idNo.toLowerCase().includes(searchTerm) ||
-      (client.id && client.id.toString().toLowerCase().includes(searchTerm)) ||
-      (client.location && client.location.toLowerCase().includes(searchTerm)) ||
-      (client.district && client.district.toLowerCase().includes(searchTerm))
-    );
-  });
+  const router = useRouter();
 
   // Handle outside click to close menu
   useEffect(() => {
@@ -51,140 +35,137 @@ export function SearchClient({ clients, onAddNewClick }) {
     e.preventDefault();
     setMenuOpen(true);
     setMenuClient(client);
-    // Position menu at mouse click
     setMenuPosition({ x: e.clientX, y: e.clientY });
   };
 
   const handleUpdate = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
-    console.log("Update client:", client.idNo);
-    
     router.push(`/clients/update/${client.nic}`);
-    console.log("Update client:", client);
   };
 
   const handleLoans = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
-    console.log("Loans list for client:", client);
+    // handle loans logic
   };
 
   const handleCreateLoan = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
     router.push(`/loans/${`C-${client.id.toString().padStart(3, '0')}`}`);
-    console.log("Create loan for client:", client);
   };
 
+  // --- SEARCH HANDLING ---
+  const handleInputChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+  const handleFilterChange = (e) => {
+    setSearchFilter(e.target.value);
+  };
+  const handleSearchClick = () => {
+    if (searchQuery.trim()) {
+      onSearch(searchFilter, searchQuery.trim());
+    }
+  };
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearchClick();
+  };
+
+  // --- CARD VIEW ---
   return (
     <>
-      {/* Filter */}
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            className="pl-9"
-            placeholder="Filter clients by name, ID, location..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
+      {/* Search Bar & Filter */}
+      <div className="bg-white rounded-lg shadow mb-6 p-4 flex flex-col md:flex-row gap-2 md:items-center">
+        <div className="flex gap-2 flex-1">
+          <select value={searchFilter} onChange={handleFilterChange} className="border rounded px-2 py-1">
+            <option value="name">Name</option>
+            <option value="nic">NIC</option>
+            <option value="id">Customer ID</option>
+            <option value="telno">Telephone No</option>
+          </select>
+          <input
+            className="border rounded px-2 py-1 flex-1"
+            placeholder={`Search by ${searchFilter}`}
+            value={searchQuery}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
           />
+          <button
+            className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
+            onClick={handleSearchClick}
+            disabled={loading || !searchQuery.trim()}
+          >
+            <Search className="inline h-4 w-4 mr-1" /> Search
+          </button>
         </div>
+        
       </div>
 
-      {/* Client List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 border-b">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Client List
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'} found
-          </p>
-        </div>
+      {/* Error State */}
+      {!loading && error && (
+        <div className="text-center py-4 text-red-600 font-semibold">{error}</div>
+      )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Client ID
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  NIC
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gender
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Address
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  District
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
-                  <tr key={`C-${client.id.toString().padStart(3, '0')}`} className="hover:bg-gray-50 group cursor-pointer" onClick={(e) => handleMenuOpen(e, client)}>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
-                      {`C-${client.id.toString().padStart(3, '0')}`}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      {/* Show name or fullname */}
-                      {client.name || client.fullname}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {/* Show idNo or nic */}
-                      {client.idNo || client.nic}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {/* Show gender as string if numeric */}
-                      {typeof client.gender === 'number' ? (client.gender === 1 ? 'Male' : client.gender === 2 ? 'Female' : client.gender) : client.gender}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {client.address}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {client.district}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge variant={client.activeLoans > 0 ? "default" : "outline"} className={client.activeLoans > 0 ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : ""}>
-                        {client.activeLoans > 0 ? `${client.activeLoans} Active Loans` : "No Loans"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="px-4 py-6 text-center text-sm text-gray-500">
-                    No clients found matching "{filterText}"
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-10 text-gray-500">Loading clients...</div>
+      )}
+
+      {/* Card View */}
+      {!loading && !error && clients.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {clients.map((client) => (
+            <div
+              key={`CLN-${client.id.toString().padStart(3, '0')}`}
+              className="bg-white rounded-lg shadow p-4 hover:shadow-lg cursor-pointer relative overflow-hidden"
+              style={{ minHeight: '220px', wordBreak: 'break-word', maxWidth: '100%' }}
+              onClick={(e) => handleMenuOpen(e, client)}
+            >
+              <div className="font-bold text-blue-700 text-lg mb-1 truncate" title={client.fullname}>{client.fullname}</div>
+              <div className="text-sm text-gray-600 mb-1">ID: <span className="font-mono break-all">CLN-{client.id.toString().padStart(3, '0')}</span></div>
+              <div className="text-sm text-gray-600 mb-1 break-all">NIC: {client.nic}</div>
+              <div className="text-sm text-gray-600 mb-1">Telephone: {client.telno || <span className="text-gray-400">N/A</span>}</div>
+              <div className="text-sm text-gray-600 mb-1">Gender: {typeof client.gender === 'number' ? (client.gender === 1 ? 'Male' : client.gender === 2 ? 'Female' : client.gender) : client.gender}</div>
+              <div className="text-sm text-gray-600 mb-1 break-all">Address: <span className="break-words">{client.address}</span></div>
+              <div className="text-sm text-gray-600 mb-1">District: {client.district}</div>
+              <div className="text-sm text-gray-600 mb-2">Active Loans: <Badge variant={client.activeLoans > 0 ? "default" : "outline"} className={client.activeLoans > 0 ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : ""}>{client.activeLoans > 0 ? `${client.activeLoans} Active Loans` : "No Loans"}</Badge></div>
+              <div className="absolute top-2 right-2">
+                <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); handleMenuOpen(e, client); }}>
+                  <span className="sr-only">Open menu</span>
+                  ...
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
+
+      {/* No Results */}
+      {!loading && !error && clients.length === 0 && searchQuery && (
+        <div className="text-center py-10 text-gray-500">No clients found for "{searchQuery}"</div>
+      )}
 
       {/* Floating context menu */}
       {menuOpen && menuClient && (
         <div
           ref={menuRef}
-          className="fixed z-40 mt-2 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none animate-fade-in"
-          style={{ top: menuPosition.y + 4, left: menuPosition.x + 4 }}
+          className="fixed z-50 mt-2 w-56 rounded-xl shadow-2xl bg-white ring-1 ring-black ring-opacity-10 focus:outline-none animate-fade-in border border-gray-200"
+          style={{ top: menuPosition.y + 8, left: menuPosition.x + 8, minWidth: 200 }}
         >
-          <div className="py-1">
-            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => handleUpdate(menuClient)}>Update</button>
-            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => handleLoans(menuClient)}>Loans List</button>
-            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => handleCreateLoan(menuClient)}>Create Loan</button>
+          <div className="py-2">
+            <button className="w-full flex items-center gap-2 px-5 py-3 text-base text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-700 transition rounded-lg group" onClick={() => handleUpdate(menuClient)}>
+              <svg className="w-5 h-5 text-blue-500 group-hover:text-blue-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6-6 3 3-6 6H9v-3z" /></svg>
+              Update Client
+            </button>
+            <button className="w-full flex items-center gap-2 px-5 py-3 text-base text-gray-700 font-medium hover:bg-green-50 hover:text-green-700 transition rounded-lg group" onClick={() => handleLoans(menuClient)}>
+              <svg className="w-5 h-5 text-green-500 group-hover:text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6 4a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Loans List
+            </button>
+            <button className="w-full flex items-center gap-2 px-5 py-3 text-base text-gray-700 font-medium hover:bg-purple-50 hover:text-purple-700 transition rounded-lg group" onClick={() => handleCreateLoan(menuClient)}>
+              <svg className="w-5 h-5 text-purple-500 group-hover:text-purple-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Create Loan
+            </button>
           </div>
         </div>
       )}

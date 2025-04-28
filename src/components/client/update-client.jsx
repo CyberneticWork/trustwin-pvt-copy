@@ -1,4 +1,3 @@
-// components/client/add-client.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,7 +14,7 @@ import provinceDistrictData from "@/lib/jsons/srt_pro_dist.json";
 import bankList from "@/lib/jsons/banklist.json";
 import { useRouter } from "next/navigation";
 
-export function AddClient({ onSubmit, onCancel, initialNIC  }) {
+export function UpdateClient({ onSubmit, onCancel, initialNIC  }) {
   // State to track the current step
   const [currentStep, setCurrentStep] = useState(0);
   const router = useRouter();
@@ -49,13 +48,11 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
   const validateRelationAddress = (address) => address && address.length > 0;
   const validateRelationNic = (nic) => (/^\d{12}$/.test(nic) || /^\d{9}[VvXx]$/.test(nic));
   const validateRelationTelNo = (telNo) => /^[0-9]+$/.test(telNo);
-  const validateTelNo = (telNo) => /^[0-9]+$/.test(telNo);
+  const validateTelNo = (telno) => /^[0-9]+$/.test(telno);
 
   // Error state
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
-  const [clientExists, setClientExists] = useState(false);
-  const [customerStatus, setCustomerStatus] = useState(null);
 
   const [formData, setFormData] = useState({
     prefix: "Mr",
@@ -65,11 +62,11 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
     dob: "",
     address1: "",
     location: "",
+    telno: "",
     gsDivision: "",
     dsOffice: "",
     district: "",
     province: "",
-    telno: "",
     relationName: "",
     relationNic: "",
     relationTelNo: "",
@@ -120,11 +117,11 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
       if (!validateDOB(formData.dob)) newErrors.dob = "Must be at least 18 years old.";
       if (!formData.address1) newErrors.address1 = "Address is required.";
       if (!['JE', 'NG'].includes(formData.location)) newErrors.location = "Location must be JE or NG.";
+      if (!validateTelNo(formData.telno)) newErrors.telno = "Telephone No: numbers only.";
       if (!validateGSDiv(formData.gsDivision)) newErrors.gsDivision = "GS Division: 3-6 uppercase letters/numbers.";
       if (!validateDSOffice(formData.dsOffice)) newErrors.dsOffice = "DS Office: letters only.";
       if (!formData.district) newErrors.district = "District is required.";
       if (!formData.province) newErrors.province = "Province is required.";
-      if (!formData.telno || !validateTelNo(formData.telno)) newErrors.telno = "Telephone No: numbers only.";
       setErrors(newErrors);
       const isPersonalComplete = Object.keys(newErrors).length === 0;
       setSectionStatus(prev => ({ ...prev, personal: isPersonalComplete }));
@@ -148,19 +145,20 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
 
   // Auto-search and fill on NIC input
   useEffect(() => {
+    // Only trigger if NIC is valid
     if (validateIdNo(formData.idNo)) {
       async function fetchCustomer(nic) {
         try {
           const res = await fetch(`/api/customer/${nic}`);
-          if (!res.ok) {
-            setClientExists(false);
-            setCustomerStatus(null);
-            return;
-          }
+          if (!res.ok) return; // Not found, do not overwrite
           const data = await res.json();
           if (data.customer) {
-            setClientExists(true);
-            setCustomerStatus(data.customer.status);
+            // Set province/district state for dropdowns
+            if (data.customer.province) setSelectedProvince(data.customer.province);
+            if (data.customer.province) {
+              const found = provinceDistrictData["Sri Lanka"].Provinces.find(p => p.name === data.customer.province);
+              setDistricts(found ? found.districts : []);
+            }
             setFormData(prev => ({
               ...prev,
               prefix: data.customer.prefix || "Mr",
@@ -170,36 +168,23 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
               dob: data.customer.dob ? data.customer.dob.slice(0, 10) : "",
               address1: data.customer.address || "",
               location: data.customer.location || "",
+              telno: data.customer.telno || "",
               gsDivision: data.customer.gs || "",
               dsOffice: data.customer.ds || "",
               district: data.customer.district || "",
               province: data.customer.province || "",
-              telno: data.customer.telno || "",
               relationName: data.spouse?.name || "",
               relationNic: data.spouse?.nic || "",
               relationTelNo: data.spouse?.telno || "",
               relationshipType: data.spouse?.relation || "Spouse",
               relationAddress1: data.spouse?.address || ""
             }));
-            // Set province/district state for dropdowns
-            if (data.customer.province) setSelectedProvince(data.customer.province);
-            if (data.customer.province) {
-              const found = provinceDistrictData["Sri Lanka"].Provinces.find(p => p.name === data.customer.province);
-              setDistricts(found ? found.districts : []);
-            }
-          } else {
-            setClientExists(false);
-            setCustomerStatus(null);
           }
         } catch (e) {
-          setClientExists(false);
-          setCustomerStatus(null);
+          // Ignore errors for auto-search
         }
       }
       fetchCustomer(formData.idNo);
-    } else {
-      setClientExists(false);
-      setCustomerStatus(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.idNo]);
@@ -227,11 +212,11 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
             dob: data.customer.dob ? data.customer.dob.slice(0, 10) : "",
             address1: data.customer.address || "",
             location: data.customer.location || "",
+            telno: data.customer.telno || "",
             gsDivision: data.customer.gs || "",
             dsOffice: data.customer.ds || "",
             district: data.customer.district || "",
             province: data.customer.province || "",
-            telno: data.customer.telno || "",
             relationName: data.spouse?.name || "",
             relationNic: data.spouse?.nic || "",
             relationTelNo: data.spouse?.telno || "",
@@ -246,81 +231,14 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
     if (initialNIC) fetchCustomer(initialNIC);
   }, [initialNIC]);
 
-  // Helper to save step to API
-  const saveStepToAPI = async (stepName) => {
-    setApiError("");
-    const customer = {
-      prefix: formData.prefix,
-      fullname: formData.fullName,
-      nic: formData.idNo,
-      gender: formData.gender === "Male" ? 1 : 0,
-      dob: formData.dob,
-      location: formData.location,
-      address: formData.address1,
-      gs: formData.gsDivision,
-      ds: formData.dsOffice,
-      district: formData.district,
-      province: formData.province,
-      telno: formData.telno,
-      status: "draft",
-      createby: "system",
-      editby: "system"
-    };
-    const spouse = {
-      name: formData.relationName,
-      nic: formData.relationNic,
-      telno: formData.relationTelNo,
-      relation: formData.relationshipType,
-      address: formData.relationAddress1
-    };
-    try {
-      const res = await fetch("/api/customer/step", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer, spouse, step: stepName })
-      });
-      const data = await res.json();
-      if (!res.ok || data.code !== "SUCCESS") {
-        throw new Error(data.error || "Failed to save step");
-      }
-      // If API returns customerId, store it for spouse step (future-proof)
-      if (data.customerId) setCustomerId(data.customerId);
-    } catch (e) {
-      setApiError(e.message);
-      return false;
-    }
-    return true;
-  };
 
-  // Add a function to update only status in the customer table
-  const updateCustomerStatus = async (statusValue) => {
-    setApiError("");
-    try {
-      const res = await fetch("/api/customer/step", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer: { nic: formData.idNo, status: statusValue }, step: "status" })
-      });
-      const data = await res.json();
-      if (!res.ok || data.code !== "SUCCESS") {
-        throw new Error(data.error || "Failed to update status");
-      }
-      return true;
-    } catch (e) {
-      setApiError(e.message);
-      return false;
-    }
-  };
-
+ 
   const handleNext = async () => {
-    // Prevent saving if client exists
-    if (clientExists && customerStatus !== "draft") return;
     // Only proceed if current section is valid
     if (validateSection(currentStep)) {
-      const ok = await saveStepToAPI(steps[currentStep]?.id);
-      if (ok) setCurrentStep(current => current + 1);
+      setCurrentStep(current => current + 1);
     } else {
-      alert("Please fill in all required fields before proceeding.");
+      setApiError("Please fill in all required fields before proceeding.");
     }
   };
 
@@ -328,15 +246,54 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
     setCurrentStep(current => Math.max(0, current - 1));
   };
 
+  const getSpousePayload = () => {
+    return {
+      name: formData.relationName || '',
+      address: formData.relationAddress1 || '',
+      telno: formData.relationTelNo || '',
+      relation: formData.relationshipType || ''
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Final validation before submission
-    if (sectionStatus.personal && sectionStatus.relation) {
-      // Only update status to 'approve' on confirm
-      const ok = await updateCustomerStatus("approve");
-      if (ok && onSubmit) onSubmit({ ...formData, status: "approve" });
-    } else {
-      alert("Please complete all required fields before submitting.");
+    if (!(sectionStatus.personal && sectionStatus.relation)) {
+      setApiError("Please complete all required fields before submitting.");
+      return;
+    }
+    setApiError("");
+    const payload = {
+      prefix: formData.prefix,
+      fullname: formData.fullName,
+      nic: formData.idNo,
+      gender: formData.gender === "Male" ? 1 : 0,
+      dob: formData.dob,
+      location: formData.location,
+      address: formData.address1,
+      telno: formData.telno,
+      gs: formData.gsDivision,
+      ds: formData.dsOffice,
+      district: formData.district,
+      province: formData.province,
+      status: "pending",
+      createby: "system",
+      editby: "system",
+      spouse: getSpousePayload()
+    };
+    try {
+      const res = await fetch("/api/update-customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.code !== "SUCCESS") {
+        setApiError(data.error || "Failed to update customer");
+        return;
+      }
+      if (onSubmit) onSubmit(payload);
+    } catch (e) {
+      setApiError("Network or server error. Please try again.");
     }
   };
 
@@ -396,42 +353,44 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
 
   const renderPersonalDetails = () => {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Details</CardTitle>
+      <Card className="shadow-lg border-2 border-blue-100 animate-fade-in">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-xl">
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="text-blue-500 h-6 w-6 animate-bounceIn" /> Personal Details
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-8">
-          {/* Row 6 - Customer Full Name and ID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Row 0 - Prefix + Name + ID */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div className="space-y-2">
+              <Label htmlFor="prefix" className="text-sm font-medium">Prefix <span className="text-red-500">*</span></Label>
+              <select
+                id="prefix"
+                value={formData.prefix}
+                onChange={e => handleChange('prefix', e.target.value)}
+                required
+                className="border rounded px-2 py-2 w-full focus:ring-2 focus:ring-blue-300 transition"
+              >
+                <option value="Mr">Mr</option>
+                <option value="Mrs">Mrs</option>
+                <option value="Miss">Miss</option>
+                <option value="Ms">Ms</option>
+                <option value="Rev">Rev</option>
+                <option value="Dr">Dr</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium">Customer Full Name <span className="text-red-500">*</span></Label>
-              <div className="flex items-center space-x-2">
-                <select
-                  id="prefix"
-                  value={formData.prefix}
-                  onChange={e => handleChange('prefix', e.target.value)}
-                  disabled={clientExists && customerStatus !== "draft"}
-                  className="border rounded px-2 py-1 bg-white"
-                  style={{ minWidth: 70 }}
-                >
-                  <option value="Mr">Mr</option>
-                  <option value="Mrs">Mrs</option>
-                  <option value="Miss">Miss</option>
-                  <option value="Ms">Ms</option>
-                  <option value="Dr">Dr</option>
-                  <option value="Rev">Rev</option>
-                  <option value="Other">Other</option>
-                </select>
-                <Input 
-                  id="fullName" 
-                  value={formData.fullName}
-                  onChange={(e) => handleChange('fullName', e.target.value)}
-                  placeholder="Full Name" 
-                  required
-                  disabled={clientExists && customerStatus !== "draft"}
-                />
-              </div>
-              {errors.fullName && <p className="text-xs text-red-600">{errors.fullName}</p>}
+              <Input 
+                id="fullName" 
+                value={formData.fullName}
+                onChange={(e) => handleChange('fullName', e.target.value)}
+                placeholder="Full Name" 
+                required
+                className="focus:ring-2 focus:ring-blue-300 transition"
+              />
+              {errors.fullName && <p className="text-xs text-red-600 animate-shake">{errors.fullName}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="idNo" className="text-sm font-medium">ID No <span className="text-red-500">*</span></Label>
@@ -441,8 +400,9 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 onChange={(e) => handleChange('idNo', e.target.value)}
                 placeholder="National ID" 
                 required
+                className="focus:ring-2 focus:ring-blue-300 transition"
               />
-              {errors.idNo && <p className="text-xs text-red-600">{errors.idNo}</p>}
+              {errors.idNo && <p className="text-xs text-red-600 animate-shake">{errors.idNo}</p>}
             </div>
           </div>
 
@@ -454,7 +414,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 value={formData.gender}
                 onValueChange={(value) => handleChange('gender', value)}
                 className="flex space-x-4 pt-2"
-                disabled={clientExists && customerStatus !== "draft"}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Male" id="male" />
@@ -474,25 +433,24 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                   type="date" 
                   value={formData.dob}
                   onChange={(e) => handleChange('dob', e.target.value)}
-                  className="pl-9" 
+                  className="pl-9 focus:ring-2 focus:ring-blue-300 transition" 
                   required
-                  disabled={clientExists && customerStatus !== "draft"}
                 />
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
-              {errors.dob && <p className="text-xs text-red-600">{errors.dob}</p>}
+              {errors.dob && <p className="text-xs text-red-600 animate-shake">{errors.dob}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telno" className="text-sm font-medium">Telephone No <span className="text-red-500">*</span></Label>
+              <Label htmlFor="location" className="text-sm font-medium">Location <span className="text-red-500">*</span></Label>
               <Input 
-                id="telno" 
-                value={formData.telno}
-                onChange={(e) => handleChange('telno', e.target.value)}
-                placeholder="Telephone No" 
+                id="location" 
+                value={formData.location}
+                onChange={(e) => handleChange('location', e.target.value)}
+                placeholder="e.g. JE" 
                 required
-                disabled={clientExists && customerStatus !== "draft"}
+                className="focus:ring-2 focus:ring-blue-300 transition"
               />
-              {errors.telno && <p className="text-xs text-red-600">{errors.telno}</p>}
+              {errors.location && <p className="text-xs text-red-600 animate-shake">{errors.location}</p>}
             </div>
           </div>
 
@@ -505,9 +463,24 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
               onChange={(e) => handleChange('address1', e.target.value)}
               placeholder="House No., Street, City" 
               required
-              disabled={clientExists && customerStatus !== "draft"}
+              className="focus:ring-2 focus:ring-blue-300 transition"
             />
-            {errors.address1 && <p className="text-xs text-red-600">{errors.address1}</p>}
+            {errors.address1 && <p className="text-xs text-red-600 animate-shake">{errors.address1}</p>}
+          </div>
+          {/* Row X - Telephone No */}
+          <div className="space-y-2">
+            <Label htmlFor="telno" className="text-sm font-medium flex items-center gap-1">Telephone No <span className="text-red-500">*</span>
+              <span className="ml-1 text-gray-400" title="Only numbers allowed">?</span>
+            </Label>
+            <Input 
+              id="telno" 
+              value={formData.telno}
+              onChange={(e) => handleChange('telno', e.target.value)}
+              placeholder="Telephone No" 
+              required
+              className="focus:ring-2 focus:ring-blue-300 transition"
+            />
+            {errors.telno && <p className="text-xs text-red-600 animate-shake">{errors.telno}</p>}
           </div>
 
           {/* Row 9-10 - GS Division and DS Office */}
@@ -520,9 +493,9 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 onChange={(e) => handleChange('gsDivision', e.target.value)}
                 placeholder="e.g. 70B" 
                 required
-                disabled={clientExists && customerStatus !== "draft"}
+                className="focus:ring-2 focus:ring-blue-300 transition"
               />
-              {errors.gsDivision && <p className="text-xs text-red-600">{errors.gsDivision}</p>}
+              {errors.gsDivision && <p className="text-xs text-red-600 animate-shake">{errors.gsDivision}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dsOffice" className="text-sm font-medium">DS Office <span className="text-red-500">*</span></Label>
@@ -532,23 +505,21 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 onChange={(e) => handleChange('dsOffice', e.target.value)}
                 placeholder="e.g. Katana" 
                 required
-                disabled={clientExists && customerStatus !== "draft"}
+                className="focus:ring-2 focus:ring-blue-300 transition"
               />
-              {errors.dsOffice && <p className="text-xs text-red-600">{errors.dsOffice}</p>}
+              {errors.dsOffice && <p className="text-xs text-red-600 animate-shake">{errors.dsOffice}</p>}
             </div>
           </div>
 
           {/* Row 9-10 - District and Province */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           
             <div className="space-y-2">
               <Label htmlFor="province" className="text-sm font-medium">Province <span className="text-red-500">*</span></Label>
               <Select
                 value={selectedProvince || formData.province}
                 onValueChange={handleProvinceChange}
-                disabled={clientExists && customerStatus !== "draft"}
               >
-                <SelectTrigger id="province">
+                <SelectTrigger id="province" className="focus:ring-2 focus:ring-blue-300 transition">
                   <SelectValue placeholder="Select province" />
                 </SelectTrigger>
                 <SelectContent>
@@ -557,17 +528,16 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.province && <p className="text-xs text-red-600">{errors.province}</p>}
+              {errors.province && <p className="text-xs text-red-600 animate-shake">{errors.province}</p>}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="district" className="text-sm font-medium">District <span className="text-red-500">*</span></Label>
               <Select
                 value={formData.district}
                 onValueChange={handleDistrictChange}
-                disabled={!selectedProvince || districts.length === 0 || clientExists && customerStatus !== "draft"}
+                disabled={!selectedProvince || districts.length === 0}
               >
-                <SelectTrigger id="district">
+                <SelectTrigger id="district" className="focus:ring-2 focus:ring-blue-300 transition">
                   <SelectValue placeholder="Select district" />
                 </SelectTrigger>
                 <SelectContent>
@@ -576,23 +546,16 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.district && <p className="text-xs text-red-600">{errors.district}</p>}
+              {errors.district && <p className="text-xs text-red-600 animate-shake">{errors.district}</p>}
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button type="button" onClick={onCancel} variant="outline">
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleNext} className="flex items-center" disabled={clientExists && customerStatus !== "draft"}>
+        <CardFooter className="flex justify-between bg-gradient-to-r from-blue-50 to-blue-100 rounded-b-xl">
+          <Button type="button" onClick={onCancel} variant="outline" className="hover:bg-red-50 transition">Cancel</Button>
+          <Button type="button" onClick={handleNext} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white shadow-md transition">
             Next <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </CardFooter>
-        {clientExists && customerStatus !== "draft" && (
-          <div className="bg-yellow-100 text-yellow-800 p-2 rounded mt-4">
-            Customer already exists and cannot be edited (status: {customerStatus}).
-          </div>
-        )}
       </Card>
     );
   };
@@ -613,7 +576,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 onChange={(e) => handleChange('relationName', e.target.value)}
                 placeholder="Full Name"
                 required
-                disabled={clientExists && customerStatus !== "draft"}
               />
               {errors.relationName && <p className="text-xs text-red-600">{errors.relationName}</p>}
             </div>
@@ -625,7 +587,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
                 onChange={(e) => handleChange('relationNic', e.target.value)}
                 placeholder="NIC"
                 required
-                disabled={clientExists && customerStatus !== "draft"}
               />
               {errors.relationNic && <p className="text-xs text-red-600">{errors.relationNic}</p>}
             </div>
@@ -638,7 +599,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
               onChange={(e) => handleChange('relationAddress1', e.target.value)}
               placeholder="Address"
               required
-              disabled={clientExists && customerStatus !== "draft"}
             />
             {errors.relationAddress1 && <p className="text-xs text-red-600">{errors.relationAddress1}</p>}
           </div>
@@ -650,7 +610,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
               onChange={(e) => handleChange('relationTelNo', e.target.value)}
               placeholder="Telephone No"
               required
-              disabled={clientExists && customerStatus !== "draft"}
             />
             {errors.relationTelNo && <p className="text-xs text-red-600">{errors.relationTelNo}</p>}
           </div>
@@ -659,7 +618,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
             <Select 
               value={formData.relationshipType}
               onValueChange={(value) => handleChange('relationshipType', value)}
-              disabled={clientExists && customerStatus !== "draft"}
             >
               <SelectTrigger id="relationshipType">
                 <SelectValue placeholder="Select relationship" />
@@ -676,96 +634,16 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" onClick={handlePrevious} variant="outline" className="flex items-center" disabled={clientExists && customerStatus !== "draft"}>
+          <Button type="button" onClick={handlePrevious} variant="outline" className="flex items-center">
             <ChevronLeft className="mr-1 h-4 w-4" /> Previous
           </Button>
-          <Button type="button" onClick={handleNext} disabled={clientExists && customerStatus !== "draft"}>
+          <Button type="button" onClick={handleNext}>
             Next <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </CardFooter>
-        {clientExists && customerStatus !== "draft" && (
-          <div className="bg-yellow-100 text-yellow-800 p-2 rounded mt-4">
-            Customer already exists and cannot be edited (status: {customerStatus}).
-          </div>
-        )}
       </Card>
     );
   };
-
-  const [showPreview, setShowPreview] = useState(false);
-
-  // Add this handler to fetch customerId before showing preview
-  const handlePreview = async () => {
-    try {
-      const res = await fetch(`/api/customer/${formData.idNo}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.customer && data.customer.id) {
-          setCustomerId(data.customer.id);
-        }
-      }
-    } catch (e) {
-      // Ignore errors
-    }
-    setShowPreview(true);
-  };
-
-  const renderPreviewWindow = (customerId) => {
-    
-    customerId = `C-${customerId.toString().padStart(3, '0')}`
-    return (
-      <Card className="border-2 border-blue-400 shadow-lg">
-        <CardHeader>
-          <CardTitle>Preview Client Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          {/* Personal Details Section */}
-          <div>
-            <h3 className="text-base font-semibold text-blue-700 mb-2">Personal Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">Customer ID:</span> {customerId ? customerId : "N/A"}</p>
-                <p className="text-sm"><span className="font-medium">Full Name:</span> {formData.fullName}</p>
-                <p className="text-sm"><span className="font-medium">ID:</span> {formData.idNo}</p>
-                <p className="text-sm"><span className="font-medium">Gender:</span> {formData.gender}</p>
-                <p className="text-sm"><span className="font-medium">Date of Birth:</span> {formData.dob}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">District:</span> {formData.district}</p>
-                <p className="text-sm"><span className="font-medium">Province:</span> {formData.province}</p>
-                <p className="text-sm"><span className="font-medium">Relation:</span> {formData.relationName} ({formData.relationshipType})</p>
-              </div>
-            </div>
-          </div>
-          {/* Spouse/Relation Details Section */}
-          <div>
-            <h3 className="text-base font-semibold text-purple-700 mb-2">Spouse/Relation Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">Relation Name:</span> {formData.relationName}</p>
-                <p className="text-sm"><span className="font-medium">NIC:</span> {formData.relationNic}</p>
-                <p className="text-sm"><span className="font-medium">Relationship:</span> {formData.relationshipType}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">Relation Address:</span> {formData.relationAddress1}</p>
-                <p className="text-sm"><span className="font-medium">Telephone No:</span> {formData.relationTelNo}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button type="button" onClick={() => setShowPreview(false)} variant="outline">
-            Edit
-          </Button>
-          <Button type="submit" onClick={() => router.push(`/loans/${customerId}`)} className="bg-green-600 hover:bg-green-700 text-white">
-            Create Loan
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  };
-
-  const [showReview, setShowReview] = useState(false);
 
   const renderReviewSection = () => {
     const allSectionsComplete = sectionStatus.personal && sectionStatus.relation;
@@ -795,23 +673,6 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
             </div>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Client Information Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">Name:</span> {formData.fullName}</p>
-                <p className="text-sm"><span className="font-medium">ID:</span> {formData.idNo}</p>
-                <p className="text-sm"><span className="font-medium">Gender:</span> {formData.gender}</p>
-                <p className="text-sm"><span className="font-medium">Date of Birth:</span> {formData.dob}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm"><span className="font-medium">District:</span> {formData.district}</p>
-                <p className="text-sm"><span className="font-medium">Province:</span> {formData.province}</p>
-                <p className="text-sm"><span className="font-medium">Relation:</span> {formData.relationName} ({formData.relationshipType})</p>
-              </div>
-            </div>
-          </div>
-
           {!allSectionsComplete && (
             <div className="bg-red-50 p-4 rounded-lg border border-red-100">
               <p className="text-sm text-red-800">
@@ -821,29 +682,22 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" onClick={handlePrevious} variant="outline" className="flex items-center" disabled={clientExists && customerStatus !== "draft"}>
+          <Button type="button" onClick={handlePrevious} variant="outline" className="flex items-center">
             <ChevronLeft className="mr-1 h-4 w-4" /> Previous
           </Button>
           <Button 
-            type="button"
-            disabled={!allSectionsComplete || clientExists && customerStatus !== "draft"}
+            type="submit"
+            disabled={!allSectionsComplete}
             className={cn(!allSectionsComplete && "opacity-50 cursor-not-allowed")}
-            onClick={handlePreview}
           >
-            Preview & Confirm
+            Submit
           </Button>
         </CardFooter>
-        {clientExists && customerStatus !== "draft" && (
-          <div className="bg-yellow-100 text-yellow-800 p-2 rounded mt-4">
-            Customer already exists and cannot be edited (status: {customerStatus}).
-          </div>
-        )}
       </Card>
     );
   };
 
   const renderCurrentStep = () => {
-    if (showPreview) return renderPreviewWindow(customerId);
     switch (currentStep) {
       case 0:
         return renderPersonalDetails();

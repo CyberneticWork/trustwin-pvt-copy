@@ -212,13 +212,34 @@ export default function Sidebar() {
                   collapsed={collapsed}
                 />
 
-                <NavItem 
-                  icon={<Users className="w-5 h-5" />} 
-                  label="Clients" 
-                  isActive={activeNav === "clients"}
-                  onClick={() => handleNavigation("clients")}
-                  collapsed={collapsed}
-                />
+                <div className="mb-2">
+                  <NavItem 
+                    icon={<Users className="w-5 h-5" />} 
+                    label="Clients" 
+                    isActive={activeNav === "clients" || pathname.startsWith("/clients")}
+                    onClick={() => handleNavigation("clients")}
+                    collapsed={collapsed}
+                  />
+                  {/* Submenu for Clients */}
+                  {!collapsed && pathname.startsWith("/clients") && (
+                    <div className="ml-10 mt-1 flex flex-col gap-1">
+                      <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-50 hover:text-blue-700 ${pathname === "/clients" ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/clients")}
+                      >
+                        <Search className="w-4 h-4" />
+                        Search Client
+                      </button>
+                      <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/clients/add" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/clients/add")}
+                      >
+                        <Users className="w-4 h-4" />
+                        Add New Client
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 <NavItem 
                   icon={<CreditCard className="w-5 h-5" />} 
@@ -228,8 +249,6 @@ export default function Sidebar() {
                   collapsed={collapsed}
                   badge="2"
                 />
-                
-                
                 
                 <NavItem 
                   icon={<PieChart className="w-5 h-5" />} 
