@@ -1,20 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 
-// DB config (customize as needed)
-const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "tw_db",
-};
-
-// Only count loans with status: approved, success, finished
-const VALID_LOAN_STATUSES = [
-  'approved', // adjust to your numeric code if needed
-  'success',  // adjust to your numeric code if needed
-  'finished'  // adjust to your numeric code if needed
-];
 
 export async function GET(req) {
   let connection;
