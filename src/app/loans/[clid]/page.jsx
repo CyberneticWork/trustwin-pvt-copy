@@ -189,6 +189,16 @@ export default function Home() {
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto p-4 md:p-6">
+
+        <div className="mb-6">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
+              Financial Solutions
+            </h1>
+            <p className="text-sm text-gray-500">
+              Select the financial product that best suits your needs.
+            </p>
+          </div>
+          
           {/* Client Information Card */}
           <Card className="w-full mb-6 overflow-hidden">
             <CardContent className="p-0">
@@ -267,14 +277,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <div className="mb-6">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-              Financial Solutions
-            </h1>
-            <p className="text-sm text-gray-500">
-              Select the financial product that best suits your needs.
-            </p>
-          </div>
+          
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {financialProducts.map((product, index) => (
