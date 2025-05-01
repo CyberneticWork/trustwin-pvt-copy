@@ -32,7 +32,8 @@ export default function ACL() {
             id: emp.id,
             username: emp.username,
             email: emp.email,
-            role: emp.roll || "N/A"
+            role: emp.roll || "N/A",
+            ACL: emp.ACL || ""  // include ACL base64 string
           }));
           setOriginalAdmins(mappedAdmins);
         } else {
@@ -81,8 +82,24 @@ export default function ACL() {
   const handleOpenACLDialog = (admin) => {
     setSelectedAdmin(admin);
     setShowACLDialog(true);
-    // Load any existing ACL data for this admin (demo)
-    setAclTable([]);
+
+    // Decode base64 ACL string and parse IDs
+    if (admin.ACL) {
+      try {
+        const decoded = atob(admin.ACL); // decode base64 string
+        const aclIds = decoded.split(",").map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+
+        // Map IDs to ACLData entries
+        const aclEntries = aclIds.map(id => ACLData.find(page => page.id === id)).filter(entry => entry);
+
+        setAclTable(aclEntries);
+      } catch (error) {
+        console.error("Failed to decode ACL base64 string:", error);
+        setAclTable([]);
+      }
+    } else {
+      setAclTable([]);
+    }
   };
 
   const handleAddAccess = () => {

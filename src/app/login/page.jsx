@@ -21,7 +21,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/account/login", {
+      // Validate and get token
+      const response = await fetch("/api/account/validate-credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -29,13 +30,18 @@ export default function LoginPage() {
 
       const data = await response.json();
 
-      if (response.ok && data.code === "SUCCESS") {
-        localStorage.setItem("token", data.token);
-        setError("");
-        router.push("/");
-      } else {
+      if (!response.ok || data.code !== "SUCCESS") {
         setError(data.error || "Login failed");
+        return;
       }
+
+      // Store token and user info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to home
+      setError("");
+      router.push("/");
     } catch (error) {
       setError("Server error. Please try again.");
       console.error("Login Error:", error);

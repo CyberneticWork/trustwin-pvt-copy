@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, usePathname } from "next/navigation"; // Import Next.js router
 
+import { Folder, Users as UsersIcon } from "lucide-react";
+
 // Define the pages and their corresponding routes
 const PAGES = {
   "dashboard": "/",
@@ -29,6 +31,10 @@ const PAGES = {
   "profile": "/profile",
   "notifications": "/notifications",
   "search": "/search",
+  "admin": "/admin",
+  "adminACL": "/admin/ACL",
+  "adminUser": "/admin/user",
+  "adminAdd": "/admin/addnew",
 };
 
 export default function Sidebar() {
@@ -236,6 +242,42 @@ export default function Sidebar() {
                       >
                         <Users className="w-4 h-4" />
                         Add New Client
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-2">
+                  <NavItem 
+                    icon={<Folder className="w-5 h-5" />} 
+                    label="Admin" 
+                    isActive={activeNav === "admin" || pathname.startsWith("/admin")}
+                    onClick={() => handleNavigation("admin")}
+                    collapsed={collapsed}
+                  />
+                  {/* Submenu for Admin */}
+                  {!collapsed && pathname.startsWith("/admin") && (
+                    <div className="ml-10 mt-1 flex flex-col gap-1">
+                      <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-50 hover:text-blue-700 ${pathname === "/admin/ACL" ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/admin/ACL")}
+                      >
+                        <UsersIcon className="w-4 h-4" />
+                        ACL
+                      </button>
+                      <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/admin/user" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/admin/user")}
+                      >
+                        <UsersIcon className="w-4 h-4" />
+                        User
+                      </button>
+                      <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/admin/addnew" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/admin/addnew")}
+                      >
+                        <User className="w-4 h-4" />
+                        Add New Admin
                       </button>
                     </div>
                   )}
