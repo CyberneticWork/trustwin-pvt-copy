@@ -13,7 +13,11 @@ import {
   X,
   Bell,
   User,
-  Search
+  Search,
+  UserPen,
+  UserPlus ,
+  UserCog,
+  ShieldUser
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,7 +35,7 @@ const PAGES = {
   "profile": "/profile",
   "notifications": "/notifications",
   "search": "/search",
-  "admin": "/admin",
+  "employees": "/admin",
   "adminACL": "/admin/ACL",
   "adminUser": "/admin/user",
   "adminAdd": "/admin/addnew",
@@ -249,35 +253,38 @@ export default function Sidebar() {
 
                 <div className="mb-2">
                   <NavItem 
-                    icon={<Folder className="w-5 h-5" />} 
-                    label="Admin" 
-                    isActive={activeNav === "admin" || pathname.startsWith("/admin")}
-                    onClick={() => handleNavigation("admin")}
+                    icon={<ShieldUser className="w-5 h-5" />} 
+                    label="Employees" 
+                    isActive={activeNav === "employees" || pathname.startsWith("/admin")}
+                    onClick={() => handleNavigation("employees")}
                     collapsed={collapsed}
                   />
                   {/* Submenu for Admin */}
                   {!collapsed && pathname.startsWith("/admin") && (
                     <div className="ml-10 mt-1 flex flex-col gap-1">
-                      <button
-                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-50 hover:text-blue-700 ${pathname === "/admin/ACL" ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-600"}`}
-                        onClick={() => router.push("/admin/ACL")}
+                        <button
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/admin/addnew" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/admin/addnew")}
                       >
-                        <UsersIcon className="w-4 h-4" />
-                        ACL
+                        <UserPlus className="w-4 h-4" />
+                        Add New 
                       </button>
+
                       <button
                         className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/admin/user" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
                         onClick={() => router.push("/admin/user")}
                       >
-                        <UsersIcon className="w-4 h-4" />
-                        User
+                        <UserPen className="w-4 h-4" />
+                        Update
                       </button>
+                   
+
                       <button
-                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-green-50 hover:text-green-700 ${pathname === "/admin/addnew" ? "text-green-700 font-semibold bg-green-50" : "text-gray-600"}`}
-                        onClick={() => router.push("/admin/addnew")}
+                        className={`flex items-center gap-2 text-left px-2 py-2 rounded-lg text-sm font-medium transition hover:bg-blue-50 hover:text-blue-700 ${pathname === "/admin/ACL" ? "text-blue-700 font-semibold bg-blue-50" : "text-gray-600"}`}
+                        onClick={() => router.push("/admin/ACL")}
                       >
-                        <User className="w-4 h-4" />
-                        Add New Admin
+                        <UserCog  className="w-4 h-4" />
+                        ACL
                       </button>
                     </div>
                   )}
