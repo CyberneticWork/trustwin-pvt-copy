@@ -1,28 +1,60 @@
 [
-    {
-      "id": 1,
-      "name": "Dashboard",
-      "route": "/dashboard"
-    },
-    {
-      "id": 2,
-      "name": "Users",
-      "route": "/users"
-    },
-    {
-      "id": 3,
-      "name": "Settings",
-      "route": "/settings"
-    },
-    {
-      "id": 4,
-      "name": "Reports",
-      "route": "/reports"
-    },
-    {
-      "id": 5,
-      "name": "Profile",
-      "route": "/profile"
-    }
-  ]
-  
+  {
+    "id": 1,
+    "name": "Dashboard",
+    "route": "/",
+    "icon": "Home"
+  },
+  {
+    "id": 7,
+    "name": "Loans",
+    "route": "/loans/0",
+    "icon": "CreditCard"
+  },
+  {
+    "id": 8,
+    "name": "Clients",
+    "route": "/clients",
+    "icon": "Users",
+    "submenu": [
+      {
+        "id": 9,
+        "name": "Search Client",
+        "route": "/clients",
+        "icon": "Search"
+      },
+      {
+        "id": 10,
+        "name": "Add New Client",
+        "route": "/clients/add",
+        "icon": "Users"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Admins",
+    "route": "/admin",
+    "icon": "ShieldUser",
+    "submenu": [
+      {
+        "id": 3,
+        "name": "Add New",
+        "route": "/admin/addnew",
+        "icon": "UserPlus"
+      },
+      {
+        "id": 4,
+        "name": "Update",
+        "route": "/admin/user",
+        "icon": "UserPen"
+      },
+      {
+        "id": 5,
+        "name": "ACL",
+        "route": "/admin/ACL",
+        "icon": "UserCog"
+      }
+    ]
+  }
+]
