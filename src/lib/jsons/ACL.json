@@ -9,7 +9,28 @@
     "id": 7,
     "name": "Loans",
     "route": "/loans/0",
-    "icon": "CreditCard"
+    "icon": "CreditCard",
+    "submenu": [
+      {
+        "id": 12,
+        "name": "Loan Types",
+        "route": "/loans/0",
+        "icon": "CreditCard"
+      },
+      {
+        "id": 11,
+        "name": "Business Loan",
+        "route": "/loans/business-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
+        "icon": "BriefcaseBusiness"
+      },
+      {
+        "id": 11,
+        "name": "Auto Loan",
+        "route": "/loans/auto-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
+        "icon": "BriefcaseBusiness"
+      }
+      
+    ]
   },
   {
     "id": 8,

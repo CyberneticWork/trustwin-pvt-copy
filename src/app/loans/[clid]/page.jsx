@@ -23,20 +23,18 @@ import jwt from "jsonwebtoken";
 
 function getOfficerIdFromToken() {
   if (typeof window === 'undefined') return null;
-  const token = window.localStorage.getItem('token');
-console.log('====================================');
-console.log(token);
-console.log('====================================');
-  if (!token) return null;
-  try {
-    // JWT is base64 encoded: header.payload.signature
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
+  const token = window.localStorage.getItem('user');
+// console.log('====================================');
+// console.log(token);
+// console.log('====================================');
+//   if (!token) return null;
+//   try {
+//     // JWT is base64 encoded: header.payload.signature
+//     const payload = token.split('.')[1];
+//     const decoded = JSON.parse(atob(payload));
     // Officer ID might be in a field like `id` or `userId`
-    return {name:decoded.username , id:decoded.id};
-  } catch (e) {
-    return null;
-  }
+    console.log(JSON.parse(token)["id"]);
+    return {name:JSON.parse(token)["roll"] , id:JSON.parse(token)["id"]};
 }
 
 function convertClnToSingleId(clnId) {
@@ -60,7 +58,12 @@ async function fetchCustomerById(clid) {
 
 function encodeBase64(loginId, chooseId, customerId) {
   const data = `login=${loginId},choose=${chooseId},customer=${customerId}`;
-  return btoa(data); // Encode the string to Base64
+  // Replace special characters to ensure proper Base64 encoding
+  const encodedData = btoa(encodeURIComponent(data).replace(/%([0-9A-F]{2})/g,
+    function(match, p1) {
+      return String.fromCharCode('0x' + p1);
+    }));
+  return encodedData;
 }
 
 export default function Home() {
@@ -75,8 +78,8 @@ export default function Home() {
   const [clientData, setClientData] = useState(null);
   const [clientInfo, setClientInfo] = useState({
     name: "none",
-    id: "C-2025-0042",
-    NIC: "-"
+    id: "0",
+    NIC: "0"
   });
   const [loadingClient, setLoadingClient] = useState(false);
   const [clientError, setClientError] = useState("");
@@ -180,9 +183,15 @@ export default function Home() {
       return null; // Return null if customer ID is missing
     }
 
-    const encodedData = encodeBase64(loginId, chooseId, customerId);
-    console.log("Encoded Data:", encodedData);
-    return encodedData; // Return the encoded data for further use
+    try {
+      const encodedData = encodeBase64(loginId, chooseId, customerId);
+      console.log("Encoded Data:", encodedData);
+      return encodedData;
+    } catch (error) {
+      console.error("Error encoding data:", error);
+      alert("Failed to encode data. Please try again.");
+      return null;
+    }
   };
 
   return (
