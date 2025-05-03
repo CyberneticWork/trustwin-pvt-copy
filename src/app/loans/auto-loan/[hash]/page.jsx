@@ -11,6 +11,117 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export default function AutoLoanCalculatorPage() {
+  // Function to handle loan application
+  const handlePartialPayment = async (loanId, paymentNumber, partialAmount) => {
+    try {
+      const response = await fetch('/api/loan/auto/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          loan_id: loanId,
+          payment_number: paymentNumber,
+          payment_date: new Date().toISOString().split('T')[0],
+          amount_paid: partialAmount,
+          payment_method: 'cash',
+          partial_payment: partialAmount
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.code === 'SUCCESS') {
+        // Show success message
+        toast.success('Partial payment processed successfully');
+      } else {
+        toast.error(data.message || 'Failed to process partial payment');
+      }
+    } catch (error) {
+      console.error('Error processing partial payment:', error);
+      toast.error('Failed to process partial payment');
+    }
+  };
+
+  const handleApplyLoan = async () => {
+    try {
+      // Get customer ID from the URL parameter
+      const params = new URLSearchParams(window.location.search);
+      // const customerId = params.get('cid');
+      const customerId = "1";
+      
+      if (!customerId) {
+        alert('Customer ID is required');
+        return;
+      }
+
+      // Prepare loan data
+      const loanData = {
+        customer_id: customerId,
+        vehicle_price: vehiclePrice,
+        down_payment: downPayment,
+        trade_in_value: tradeInValue,
+        loan_amount: loanAmount,
+        loan_term_months: months,
+        interest_rate: interestRate,
+        monthly_payment: results?.payment,
+        total_interest: results?.totalInterest,
+        total_payable: results?.totalPayable,
+        effective_rate: (results?.totalInterest / loanAmount * 100).toFixed(2),
+        client_receiving_amount: clientReceiving,
+        initial_charges: {
+          service_charges: serviceCharges,
+          document_charges: documentCharges,
+          rmv_charges: rmvCharges,
+          insurance_premium: insurancePremium,
+          introducer_commission: introducerCommission,
+          other_charges: otherCharges,
+          total_charges: serviceCharges + documentCharges + rmvCharges + insurancePremium + introducerCommission + otherCharges,
+          charges_option: initialChargesOption
+        },
+        payment_schedule: results?.amortizationSchedule.map((period, index) => ({
+          payment_number: index + 1,
+          payment_date: new Date(Date.now() + (index * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+          payment_amount: period.payment,
+          principal_amount: period.principal,
+          interest_amount: period.interest,
+          remaining_balance: period.balance
+        }))
+      };
+
+      // Show loading state
+      document.body.style.cursor = 'wait';
+      
+      // Make API call to create loan application
+      const response = await fetch('/api/loan/auto/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loanData)
+      });
+
+      const result = await response.json();
+
+      if (result.code === 'SUCCESS') {
+        // Loan application created successfully
+        alert('Loan application submitted successfully!');
+        
+        // Optionally redirect to a confirmation page
+        // window.location.href = `/loan/auto/confirmation?loan_id=${result.loan_id}`;
+      } else {
+        throw new Error(result.message || 'Failed to create loan application');
+      }
+
+    } catch (error) {
+      console.error('Error creating loan application:', error);
+      alert('Error creating loan application: ' + error.message);
+    } finally {
+      document.body.style.cursor = 'default';
+    }
+  };
+
+  // Common state
   // Common state
   const [vehiclePrice, setVehiclePrice] = useState(3000000);
   const [downPayment, setDownPayment] = useState(600000);
@@ -94,6 +205,9 @@ export default function AutoLoanCalculatorPage() {
       totalInitialCharges,
       initialPaymentOption
     );
+
+    console.log(calculationResults);
+    
     
     setResults(calculationResults);
   }, [
@@ -468,6 +582,7 @@ export default function AutoLoanCalculatorPage() {
                   </Button>
                   
                   <Button 
+                    onClick={handleApplyLoan}
                     style={{ 
                       width: "100%", 
                       marginTop: "8px",
@@ -523,6 +638,7 @@ export default function AutoLoanCalculatorPage() {
                   <tbody>
                     {/* Display the actual amortization schedule from results */}
                     {results.amortizationSchedule.map((period, index) => (
+                      console.log(results),
                       <tr 
                         key={period.period} 
                         style={{ 

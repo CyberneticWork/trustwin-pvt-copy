@@ -53,6 +53,21 @@
     ]
   },
   {
+    "id": 13,
+    "name": "Customer Requests",
+    "route": "/customer-requests",
+    "icon": "SendHorizontal",
+    "submenu": [
+      {
+        "id": 14,
+        "name": "Client Edit",
+        "route": "/customer-requests",
+        "icon": "BookUser"
+      }
+      
+    ]
+  },
+  {
     "id": 2,
     "name": "Admins",
     "route": "/admin",

@@ -19,7 +19,9 @@ import {
   UserPlus,
   UserCog,
   ShieldUser,
-  BriefcaseBusiness 
+  BriefcaseBusiness,
+SendHorizontal,
+  BookUser
 } from "lucide-react";
 
 const icons = {
@@ -35,7 +37,9 @@ const icons = {
   UserCog,
   UserPen,
   UserPlus,
-  BriefcaseBusiness
+  BriefcaseBusiness,
+  SendHorizontal,
+  BookUser
 };
 
 import { Button } from "@/components/ui/button";
