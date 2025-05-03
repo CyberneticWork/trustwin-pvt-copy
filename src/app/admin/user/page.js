@@ -504,7 +504,7 @@ export default function UserManagement() {
               Edit Admin User
             </DialogTitle>
             <DialogDescription className="text-slate-600 mt-1.5">
-              Make changes to {selectedAdmin?.name}'s information
+              Make changes to {selectedAdmin?.name}s information
             </DialogDescription>
           </DialogHeader>
           
