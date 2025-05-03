@@ -1,3 +1,4 @@
+
 // app/apply-for-loan/page.jsx
 "use client";
 
@@ -20,40 +21,32 @@ import PaymentDetailsStep from "@/components/applyforloan/PaymentDetailsStep";
 import SummaryStep from "@/components/applyforloan/SummaryStep";
 import SubmitStep from "@/components/applyforloan/SubmitStep";
 
-
 export default function ApplyForLoanPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loanData, setLoanData] = useState({
-    // Pre-filled customer data (would come from previous steps or context)
-    customerId: "C-1234",
-    customerName: "Kaduruwanage Lasantha",
-    
-    // Personal Details
-    idNumber: "197631001622",
-    gender: "Male",
+    submitted: false,
+
+    customerId: "",
+    customerName: "",
+    idNumber: "",
+    gender: "",
     dateOfBirth: "",
     address: {
-      line1: "No.259",
-      line2: "Pubudu Mw,",
-      line3: "K.C.Puraya, Thimbirigaskatuwa,",
-      city: "Negombo"
+      line1: "",
+      line2: "",
+      line3: "",
+      city: ""
     },
-    location: "JE",
-    gsDivision: "70B",
-    dsOffice: "Katana",
-    district: "Gampaha",
-    province: "Western",
-    
-    // Residence details
-    residenceType: "Own", // Own, Rented, With parents, Spouse
+    location: "",
+    gsDivision: "",
+    dsOffice: "",
+    district: "",
+    province: "",
+    residenceType: "Own",
     utilityBillType: "",
-    
-    // Spouse details
     spouseName: "",
     spouseRelationship: "",
     spouseAddress: "",
-    
-    // Bank details
     accountType: "",
     accountNumber: "",
     bankName: "",
@@ -64,26 +57,20 @@ export default function ApplyForLoanPage() {
       feb: "",
       mar: ""
     },
-    
-    // Loan details
-    loanType: "MBL",
-    loanTypeName: "Micro Business Loan",
-    loanAmount: 100000,
-    period: 12,
+    loanType: "",
+    loanTypeName: "",
+    loanAmount: 0,
+    period: 0,
     periodType: "Weeks",
-    rental: 5400,
+    rental: 0,
     contractDate: "",
     dueDate: "",
-    
-    // Business details
     natureOfBusiness: "",
     businessName: "",
     businessRegistrationNo: "",
     businessType: "Proprietorship",
     businessPeriod: "",
     businessImages: [],
-    
-    // Financial details
     income: {
       businessIncome: "",
       salaryIncome: "",
@@ -98,8 +85,6 @@ export default function ApplyForLoanPage() {
       existingLoanAmount: "",
       otherExpenses: ""
     },
-    
-    // Guarantor details
     guarantors: [
       {
         name: "",
@@ -144,8 +129,6 @@ export default function ApplyForLoanPage() {
         residenceType: ""
       }
     ],
-    
-    // Vehicle details (for auto loan)
     vehicle: {
       type: "",
       make: "",
@@ -164,8 +147,6 @@ export default function ApplyForLoanPage() {
         vehicleImages: []
       }
     },
-    
-    // Payment details
     payments: {
       initialPayment: "",
       serviceCharges: "",
@@ -174,22 +155,179 @@ export default function ApplyForLoanPage() {
       insuranceCharges: "",
       otherCharges: ""
     },
-    
-    // Investigation images
     investigationImages: {
       business: [],
       residence: [],
       selfie: null
     },
-    
-    // Submission
     comments: "",
-    agreeToTerms: false,
+    agreeToTerms: false
   });
-  
-  // Determine what steps to show based on loan type
+
+  useEffect(() => {
+    // Get the business ID from the URL
+    const businessId = window.location.pathname.split('/').pop();
+    
+    if (businessId) {
+      const fetchDetails = async () => {
+        try {
+          const response = await fetch(`/api/loan/business/details?id=${businessId}`);
+          const result = await response.json();
+          console.log(result.data.customer.clientId);
+          if (result.success && result.data) {
+            const { customer, loan } = result.data;
+            setLoanData({
+              customerId: customer.id,
+              CusDisId: customer.clientId,
+              loanid: loan.id,
+              customerName: customer.fullName,
+              idNumber: customer.nic,
+              gender: customer.gender === 1 ? "Male" : "Female",
+              dateOfBirth: customer.dob,
+              address: {
+                line1: customer.address,
+                line2: "",
+                line3: "",
+                city: customer.location
+              },
+              location: customer.location,
+              gsDivision: customer.gs,
+              dsOffice: customer.ds,
+              district: customer.district,
+              province: customer.province,
+              loanType: loan.type,
+              loanTypeName: loan.type,
+              loanAmount: loan.amount,
+              period: loan.term,
+              periodType: "Weeks",
+              rental: loan.installment,
+              comments: `Rate: ${loan.rate}% | Initial Payment: ${loan.initialPayment} ${loan.initialPaymentType}`,
+              residenceType: "Own",
+              utilityBillType: "",
+              spouseName: "",
+              spouseRelationship: "",
+              spouseAddress: "",
+              accountType: "",
+              accountNumber: "",
+              bankName: "",
+              branchName: "",
+              bankAccountPeriod: "",
+              bankTurnover: {
+                m1: "",
+                m2: "",
+                m3: ""
+              },
+              contractDate: "",
+              dueDate: "",
+              natureOfBusiness: "",
+              businessName: "",
+              businessRegistrationNo: "",
+              businessType: "Proprietorship",
+              businessPeriod: "",
+              businessImages: [],
+              income: {
+                businessIncome: "",
+                salaryIncome: "",
+                otherIncome: "",
+                interestIncome: ""
+              },
+              expenses: {
+                businessExpenses: "",
+                utilityBills: "",
+                livingExpenses: "",
+                loanPayments: "",
+                existingLoanAmount: "",
+                otherExpenses: ""
+              },
+              guarantors: [
+                {
+                  name: "",
+                  nic: "",
+                  gender: "",
+                  dateOfBirth: "",
+                  relationship: "",
+                  relationshipOther: "",
+                  address: "",
+                  location: "",
+                  gsDivision: "",
+                  dsOffice: "",
+                  district: "",
+                  province: "",
+                  mobile: "",
+                  employment: "",
+                  income: "",
+                  accountType: "",
+                  accountNumber: "",
+                  bankName: "",
+                  residenceType: ""
+                },
+                {
+                  name: "",
+                  nic: "",
+                  gender: "",
+                  dateOfBirth: "",
+                  relationship: "",
+                  relationshipOther: "",
+                  address: "",
+                  location: "",
+                  gsDivision: "",
+                  dsOffice: "",
+                  district: "",
+                  province: "",
+                  mobile: "",
+                  employment: "",
+                  income: "",
+                  accountType: "",
+                  accountNumber: "",
+                  bankName: "",
+                  residenceType: ""
+                }
+              ],
+              vehicle: {
+                type: "",
+                make: "",
+                model: "",
+                vehicleNo: "",
+                chassisNo: "",
+                engineNo: "",
+                firstRegDate: "",
+                engineCapacity: "",
+                meterReading: "",
+                valuationAmount: "",
+                valuerName: "",
+                documents: {
+                  valuation: null,
+                  crBook: null,
+                  vehicleImages: []
+                }
+              },
+              payments: {
+                initialPayment: "",
+                serviceCharges: "",
+                documentationCharges: "",
+                rmvCharges: "",
+                insuranceCharges: "",
+                otherCharges: ""
+              },
+              investigationImages: {
+                business: [],
+                residence: [],
+                selfie: null
+              },
+              agreeToTerms: false
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching details:", error);
+        }
+      };
+
+      fetchDetails();
+    }
+  }, []);
+
   const [steps, setSteps] = useState([]);
-  
+
   useEffect(() => {
     // Define steps based on loan type
     if (loanData.loanType === "AUTO") {
@@ -201,7 +339,7 @@ export default function ApplyForLoanPage() {
         { id: "vehicle", title: "Vehicle" },
         { id: "guarantor", title: "Guarantors" },
         { id: "payment", title: "Payment" },
-        { id: "documents", title: "Documents" },
+        { id: "documentation", title: "Documents" },
         { id: "summary", title: "Summary" },
         { id: "submit", title: "Submit" },
       ]);
@@ -214,7 +352,7 @@ export default function ApplyForLoanPage() {
         { id: "financial", title: "Financial" },
         { id: "guarantor", title: "Guarantors" },
         { id: "loan", title: "Loan Details" },
-        { id: "documents", title: "Documents" },
+        { id: "documentation", title: "Documents" },
         { id: "summary", title: "Summary" },
         { id: "submit", title: "Submit" },
       ]);
@@ -238,13 +376,102 @@ export default function ApplyForLoanPage() {
     }));
   };
 
-  const validateStep = (step) => {
-    // Each step component will handle its own validation
-    return true;
-  };
+  const handleNext = async () => {
+    if (steps[currentStep]?.id === "personal") {
+      try {
+        const response = await fetch('/api/loan/business/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            loanId: loanData.loanid,
+            residentType: loanData.residenceType,
+            utilityBillType: loanData.utilityBillType
+          })
+        });
+        const result = await response.json();
+        if (result.code === "SUCCESS") {
+          setCurrentStep(current => Math.min(steps.length - 1, current + 1));
+        } else {
+          alert(result.message || "Failed to save personal details");
+        }
+      } catch (error) {
+        console.error("Error saving personal details:", error);
+        alert("Failed to save personal details. Please try again.");
+      }
+    } else if (steps[currentStep]?.id === "business") {
+      try {
+        // Create form data with loanId
+        const formData = new FormData();
+        formData.append('loanId', loanData.loanid);
 
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
+        // Add all images that are selected
+        for (let i = 0; i < 3; i++) {
+          if (loanData.businessImages?.[i]) {
+            formData.append(`image${i + 1}`, loanData.businessImages[i]);
+          }
+        }
+
+        // Send to the upload API
+        const response = await fetch('/api/loan/business/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+
+        const result = response;
+        
+        if (result.status === 200) {
+          setCurrentStep(current => Math.min(steps.length - 1, current + 1));
+        } else {
+          throw new Error(result.message || "Failed to upload business images");
+        }
+      } catch (error) {
+        console.error("Error uploading business images:", error);
+        alert(error.message || "Failed to upload business images. Please try again.");
+      }
+    } else if (steps[currentStep]?.id === "documentation") {
+      try {
+        // Get all documents that need to be uploaded from investigationImages
+        const documents = Object.entries(loanData.investigationImages || {})
+          .filter(([doctype, file]) => file)
+          .map(([doctype, file]) => ({ doctype, file }));
+
+        // Upload each document
+        for (const { doctype, file } of documents) {
+          // Create form data for this document
+          const formData = new FormData();
+          formData.append('loanId', loanData.loanid);
+          formData.append('doctype', doctype);
+          formData.append('file', file);
+
+          // Send to the documentation upload API
+          const response = await fetch('/api/loan/documentation/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+          
+          if (result.code !== "SUCCESS") {
+            throw new Error(result.message || `Failed to upload ${doctype} document`);
+          }
+
+          // Update UI to show progress
+          console.log(`Successfully uploaded ${doctype} document`);
+        }
+
+        // All documents uploaded successfully, move to next step
+        setCurrentStep(current => Math.min(steps.length - 1, current + 1));
+      } catch (error) {
+        console.error("Error uploading documentation:", error);
+        alert(error.message || "Failed to upload documentation. Please try again.");
+        // Don't move to next step if there's an error
+        return;
+      }
+    } else {
       setCurrentStep(current => Math.min(steps.length - 1, current + 1));
     }
   };
@@ -254,26 +481,56 @@ export default function ApplyForLoanPage() {
   };
 
   const handleSubmit = async () => {
-    if (loanData.agreeToTerms) {
-      try {
-        // Here you would submit the data to your API
-        // const response = await fetch('/api/loan-applications', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(loanData)
-        // });
-        
-        // if (!response.ok) throw new Error('Failed to submit application');
-        
-        alert("Loan application submitted successfully!");
-        // Redirect to confirmation page or dashboard
-        // router.push('/loan-application-confirmation');
-      } catch (error) {
-        console.error("Error submitting loan application:", error);
-        alert("Failed to submit loan application. Please try again.");
+    try {
+      // Format and update loan ID
+      const formatResponse = await fetch('/api/loan/format-loan-id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          customerId: loanData.customerId,
+          loanType: loanData.loanType,
+          loanId: loanData.loanid,
+          periodType: loanData.periodType
+        })
+      });
+
+      const formatResult = await formatResponse.json();
+      
+      if (formatResult.code !== "SUCCESS") {
+        throw new Error(formatResult.message || "Failed to format loan ID");
       }
-    } else {
-      alert("Please agree to the terms and conditions before submitting.");
+
+      // Submit the loan application
+      const response = await fetch('/api/loan/application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(loanData)
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Mark as submitted
+        setLoanData(prev => ({
+          ...prev,
+          submitted: true
+        }));
+        
+        alert("Loan application submitted successfully!\nLoan ID: " + formatResult.formattedLoanId);
+        // You can redirect to a confirmation page or show the loan ID
+        // router.push(`/loan/application/${result.loanId}`);
+      } else {
+        throw new Error(result.error || 'Failed to submit loan application');
+      }
+    } catch (error) {
+      console.error("Error submitting loan application:", error);
+      alert(error.message || "Failed to submit loan application. Please try again.");
     }
   };
 
@@ -401,7 +658,7 @@ export default function ApplyForLoanPage() {
             onNestedChange={handleNestedDataChange}
           />
         );
-      case "documents":
+      case "documentation":
         return (
           <DocumentUploadStep 
             data={loanData} 
@@ -468,13 +725,10 @@ export default function ApplyForLoanPage() {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={!loanData.agreeToTerms}
-                  className={cn(
-                    "bg-green-600 hover:bg-green-700",
-                    !loanData.agreeToTerms && "opacity-50 cursor-not-allowed"
-                  )}
+                  disabled={loanData.submitted}
+                  className="bg-green-600 hover:bg-green-700"
                 >
-                  Submit Application
+                  {loanData.submitted ? "Submitted" : "Submit Application"}
                 </Button>
               )}
             </CardFooter>

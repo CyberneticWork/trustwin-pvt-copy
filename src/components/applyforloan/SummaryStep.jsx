@@ -7,7 +7,6 @@ import { AlertCircle, Check, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import PDFGenerator from "@/components/PDFGenerator";
-import { Button } from "@/components/ui/button";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 

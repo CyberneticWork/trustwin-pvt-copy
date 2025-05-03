@@ -85,14 +85,18 @@ export default function BusinessDetailsStep({ data, onChange }) {
     }));
   };
 
-  const handleImageUpload = (index, file) => {
+  const handleImageUpload = async (index, file) => {
     if (!file) return;
     
-    // Clone the current images array
-    const updatedImages = [...(data.businessImages || [])];
-    updatedImages[index] = file;
-    
-    onChange('businessImages', updatedImages);
+    try {
+      // Update the local state to show the image was uploaded
+      const updatedImages = [...(data.businessImages || [])];
+      updatedImages[index] = file;
+      onChange('businessImages', updatedImages);
+    } catch (error) {
+      console.error("Error updating image state:", error);
+      alert(error.message || "Failed to update image. Please try again.");
+    }
   };
   
   const handleImageRemove = (index) => {
@@ -100,6 +104,46 @@ export default function BusinessDetailsStep({ data, onChange }) {
     updatedImages[index] = null;
     
     onChange('businessImages', updatedImages);
+  };
+
+  // Handle form submission when clicking next
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      // Create form data with loanId
+      const formData = new FormData();
+      formData.append('loanId', data.loanid);
+
+      // Add all images that are selected
+      for (let i = 0; i < 3; i++) {
+        if (data.businessImages?.[i]) {
+          formData.append(`image${i + 1}`, data.businessImages[i]);
+        }
+      }
+
+      // Send to the upload API
+      const response = await fetch('/api/loan/business/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.code === "SUCCESS") {
+        // Form submission successful, you can navigate to next step here
+        console.log("Business details submitted successfully");
+      } else {
+        throw new Error(result.message || "Failed to submit business details");
+      }
+    } catch (error) {
+      console.error("Error submitting business details:", error);
+      alert(error.message || "Failed to submit business details. Please try again.");
+    }
   };
 
   return (
