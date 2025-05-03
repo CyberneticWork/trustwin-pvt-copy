@@ -8,8 +8,13 @@ import jsPDF from "jspdf";
 import domtoimage from "dom-to-image";
 
 /**
- * PDFGenerator - A component that generates PDF files from React content
- * Uses dom-to-image library with content centered on all pages
+ * PDFGenerator - A component that generates professional PDF documents
+ * Features:
+ * - Clean, modern layout with proper spacing
+ * - Enhanced typography and readability
+ * - Professional color scheme
+ * - Automatic page breaks with consistent margins
+ * - Improved image quality and rendering
  * 
  * @param {Object} props - Component props
  * @param {React.RefObject} props.contentRef - Reference to the content to be converted to PDF
@@ -23,6 +28,53 @@ export default function PDFGenerator({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
 
+  // Helper function to create PDF document with proper settings
+  const createPDFDocument = () => {
+    return new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+  };
+
+  // Helper function to calculate page dimensions and margins
+  const calculatePageDimensions = (pdf) => {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    const topMargin = 30; // mm
+    const bottomMargin = 30; // mm
+    const sideMargin = 25; // mm
+    
+    return {
+      pageWidth,
+      pageHeight,
+      contentWidth: pageWidth - (2 * sideMargin),
+      contentHeight: pageHeight - (topMargin + bottomMargin),
+      margins: { top: topMargin, bottom: bottomMargin, side: sideMargin }
+    };
+  };
+
+  // Helper function to add headers and footers
+  const addHeadersAndFooters = (pdf, pageCount, dimensions) => {
+    for (let i = 0; i < pageCount; i++) {
+      pdf.setPage(i + 1);
+      
+      // Header
+      pdf.setFontSize(12);
+      pdf.setTextColor(50);
+      pdf.text(filename, dimensions.margins.side, 15);
+      
+      // Footer with page number
+      pdf.setFontSize(10);
+      pdf.setTextColor(100);
+      pdf.text(`Page ${i + 1} of ${pageCount}`, 
+        dimensions.pageWidth - dimensions.margins.side - 20,
+        dimensions.pageHeight - 10
+      );
+    }
+  };
+
   const generatePDF = async () => {
     if (!contentRef?.current) return;
     
@@ -34,117 +86,111 @@ export default function PDFGenerator({
       const element = contentRef.current;
       element.classList.add("generating-pdf");
       
-      // Get original dimensions of the element
+      // Get original dimensions
       const originalWidth = element.offsetWidth;
       const originalHeight = element.offsetHeight;
       
-      // Create a PDF document with A4 dimensions (in mm)
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+      // Create PDF document
+      const pdf = createPDFDocument();
+      const dimensions = calculatePageDimensions(pdf);
       
-      // Get dimensions of A4 page in mm
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      // Calculate scale factor
+      const scaleFactor = dimensions.contentWidth / originalWidth;
       
-      // Set consistent margins for all pages
-      const margin = 15; // mm
-      const contentWidth = pageWidth - (2 * margin);
-      const contentHeight = pageHeight - (2 * margin);
+      // Capture content as image
+      const dataUrl = await captureContentAsImage(element, originalWidth, originalHeight);
       
-      // Calculate scale factor to fit content width to PDF width
-      const scaleFactor = contentWidth / originalWidth;
+      // Add content to PDF
+      await addContentToPDF(pdf, dataUrl, dimensions, scaleFactor);
       
-      // Apply a fixed width to the element for consistent rendering
-      const originalStyles = {
-        width: element.style.width,
-        maxWidth: element.style.maxWidth,
-      };
+      // Add headers and footers
+      addHeadersAndFooters(pdf, calculatePageCount(pdf, dimensions, scaleFactor), dimensions);
       
-      element.style.width = `${originalWidth}px`;
-      element.style.maxWidth = `${originalWidth}px`;
-      
-      // Create a PNG image of the element at higher quality
-      const dataUrl = await domtoimage.toPng(element, {
-        width: originalWidth,
-        height: originalHeight,
-        style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-        },
-        quality: 1.0,
-      });
-      
-      // Restore original styles
-      element.style.width = originalStyles.width;
-      element.style.maxWidth = originalStyles.maxWidth;
-      
-      // Create an image object
-      const img = new Image();
-      img.src = dataUrl;
-      
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-      
-      // Calculate the scaled dimensions for the content
-      // This preserves the aspect ratio
-      const scaledWidth = contentWidth;
-      const scaledHeight = img.height * scaleFactor;
-      
-      // Calculate number of pages needed
-      const pageCount = Math.ceil(scaledHeight / contentHeight);
-      
-      // Add content to PDF, one page at a time
-      for (let i = 0; i < pageCount; i++) {
-        // Add new page after the first one
-        if (i > 0) {
-          pdf.addPage();
-        }
-        
-        // Calculate the portion of the image to use for this page
-        const sourceY = (contentHeight / scaleFactor) * i;
-        const sourceHeight = Math.min(contentHeight / scaleFactor, img.height - sourceY);
-        const destHeight = sourceHeight * scaleFactor;
-        
-        // Center content horizontally on the page
-        const xPosition = (pageWidth - scaledWidth) / 2;
-        // Center content vertically within the available content area
-        const yPosition = (pageHeight - Math.min(destHeight, contentHeight)) / 2;
-        
-        // Add the image slice to the PDF
-        pdf.addImage(
-          dataUrl,
-          'PNG',
-          xPosition,
-          yPosition,
-          scaledWidth,
-          destHeight,
-          null,
-          'FAST',
-          0,
-          sourceY,
-          img.width,
-          sourceHeight
-        );
-      }
-      
-      // Download the PDF
+      // Download PDF
       pdf.save(`${filename}.pdf`);
 
     } catch (err) {
       console.error('Error generating PDF:', err);
       setError(`PDF generation failed: ${err.message}`);
     } finally {
-      // Remove the PDF generation class
+      // Clean up
       if (contentRef?.current) {
         contentRef.current.classList.remove("generating-pdf");
       }
       setGenerating(false);
     }
+  };
+
+  // Helper function to capture content as image
+  const captureContentAsImage = async (element, width, height) => {
+    const originalStyles = {
+      width: element.style.width,
+      maxWidth: element.style.maxWidth,
+    };
+    
+    element.style.width = `${width}px`;
+    element.style.maxWidth = `${width}px`;
+    
+    const dataUrl = await domtoimage.toPng(element, {
+      width,
+      height,
+      style: {
+        transform: 'scale(1)',
+        transformOrigin: 'top left',
+      },
+      quality: 1.0,
+    });
+    
+    element.style.width = originalStyles.width;
+    element.style.maxWidth = originalStyles.maxWidth;
+    
+    return dataUrl;
+  };
+
+  // Helper function to add content to PDF
+  const addContentToPDF = async (pdf, dataUrl, dimensions, scaleFactor) => {
+    const img = new Image();
+    img.src = dataUrl;
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+    
+    const scaledWidth = dimensions.contentWidth;
+    const scaledHeight = img.height * scaleFactor;
+    const pageCount = Math.ceil(scaledHeight / dimensions.contentHeight);
+    
+    for (let i = 0; i < pageCount; i++) {
+      if (i > 0) pdf.addPage();
+      
+      const sourceY = (dimensions.contentHeight / scaleFactor) * i;
+      const sourceHeight = Math.min(dimensions.contentHeight / scaleFactor, img.height - sourceY);
+      const destHeight = sourceHeight * scaleFactor;
+      
+      pdf.addImage(
+        dataUrl,
+        'PNG',
+        dimensions.margins.side,
+        dimensions.margins.top,
+        scaledWidth,
+        destHeight,
+        null,
+        'FAST',
+        0,
+        sourceY,
+        img.width,
+        sourceHeight
+      );
+    }
+  };
+
+  // Helper function to calculate page count
+  const calculatePageCount = (pdf, dimensions, scaleFactor) => {
+    const img = new Image();
+    img.src = pdf.output('datauristring');
+    
+    return Math.ceil(img.height * scaleFactor / dimensions.contentHeight);
   };
 
   return (
@@ -183,41 +229,106 @@ export default function PDFGenerator({
         .generating-pdf {
           background-color: white !important;
           padding: 20px;
+          font-family: 'Arial', sans-serif;
+          line-height: 1.6;
+        }
+        
+        /* Typography and readability improvements */
+        .generating-pdf h1 {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 20px;
+          color: #2D3748 !important;
+        }
+        
+        .generating-pdf h2 {
+          font-size: 20px;
+          font-weight: 600;
+          margin-bottom: 15px;
+          color: #4A5568 !important;
+        }
+        
+        .generating-pdf h3 {
+          font-size: 18px;
+          font-weight: 500;
+          margin-bottom: 10px;
+          color: #718096 !important;
+        }
+        
+        .generating-pdf p {
+          font-size: 14px;
+          margin-bottom: 15px;
+          color: #4A5568 !important;
+        }
+        
+        .generating-pdf ul, .generating-pdf ol {
+          margin-bottom: 15px;
+        }
+        
+        .generating-pdf li {
+          margin-bottom: 8px;
+        }
+        
+        /* Table styling */
+        .generating-pdf table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+        }
+        
+        .generating-pdf th, .generating-pdf td {
+          border: 1px solid #E2E8F0;
+          padding: 8px;
+          text-align: left;
+        }
+        
+        .generating-pdf th {
+          background-color: #F7FAFC;
+          font-weight: 600;
         }
         
         /* Color overrides for PDF generation */
         .generating-pdf *:not(.text-green-600):not(.text-red-600):not(.text-amber-600):not(.text-blue-600):not(.text-blue-700):not(.text-gray-400):not(.text-gray-500) {
-          color: #000000 !important;
+          color: #4A5568 !important;
         }
         
         .generating-pdf .text-green-600 {
-          color: #16a34a !important;
+          color: #48BB78 !important;
         }
         
         .generating-pdf .text-red-600 {
-          color: #dc2626 !important;
+          color: #F56565 !important;
         }
         
         .generating-pdf .text-amber-600 {
-          color: #d97706 !important;
+          color: #F6AD55 !important;
         }
         
         .generating-pdf .text-blue-600, .generating-pdf .text-blue-700 {
-          color: #2563eb !important;
+          color: #4299E1 !important;
         }
         
         .generating-pdf .text-gray-400 {
-          color: #9ca3af !important;
+          color: #718096 !important;
         }
         
         .generating-pdf .text-gray-500 {
-          color: #6b7280 !important;
+          color: #4A5568 !important;
         }
         
         /* Add page break styling for better PDF layout */
         .generating-pdf .card {
           page-break-inside: avoid;
-          margin-bottom: 15px;
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: #F7FAFC;
+          border-radius: 8px;
+        }
+        
+        .generating-pdf .section {
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #E2E8F0;
         }
         
         @media screen {

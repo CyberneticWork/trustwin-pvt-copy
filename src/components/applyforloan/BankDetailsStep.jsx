@@ -16,9 +16,9 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
     branchName: '',
     bankAccountPeriod: '',
     bankTurnover: {
-      month1: '',
-      month2: '',
-      month3: ''
+      m1: '',
+      m2: '',
+      m3: ''
     }
   });
 

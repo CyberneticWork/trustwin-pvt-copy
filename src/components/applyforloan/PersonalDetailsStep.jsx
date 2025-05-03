@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PersonalDetailsStep({ data, onChange }) {
+  console.log(data);
   // Track validation errors
   const [errors, setErrors] = useState({
     residenceType: '',
@@ -74,7 +75,7 @@ export default function PersonalDetailsStep({ data, onChange }) {
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">Client ID:</span>
-              <span className="font-medium">{data.clientId || 'Not provided'}</span>
+              <span className="font-medium">{data.CusDisId || 'Not provided'}</span>
             </div>
             
             <div className="flex items-center justify-between">
