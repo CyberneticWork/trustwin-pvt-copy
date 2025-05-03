@@ -126,7 +126,7 @@ export default function DocumentUploadStep({ data, onChange }) {
               </div>
             ) : (
               <>
-                <input
+                <input required 
                   type="file"
                   accept="image/*"
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -178,7 +178,7 @@ export default function DocumentUploadStep({ data, onChange }) {
                 </div>
               ) : (
                 <>
-                  <input
+                  <input required 
                     type="file"
                     accept="image/*"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

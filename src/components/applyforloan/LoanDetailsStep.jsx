@@ -4,18 +4,16 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { format, addWeeks, addMonths } from "date-fns";
-import { CalendarIcon, Calculator } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { CalendarIcon, Calculator, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LoanDetailsStep({ data, onChange }) {
   const [errors, setErrors] = useState({
-    loanAmount: '',
     period: '',
     periodType: '',
     contractDate: '',
@@ -32,7 +30,7 @@ export default function LoanDetailsStep({ data, onChange }) {
   // Validate on initial render and when data changes
   useEffect(() => {
     validateForm();
-  }, [data.loanAmount, data.period, data.periodType, data.contractDate, data.rental]);
+  }, [data.period, data.periodType, data.contractDate, data.rental]);
 
   // Calculate due date based on contract date, period, and periodType
   useEffect(() => {
@@ -40,10 +38,15 @@ export default function LoanDetailsStep({ data, onChange }) {
       const contractDate = new Date(data.contractDate);
       let dueDate;
       
-      if (data.periodType === "Weeks") {
-        dueDate = addWeeks(contractDate, parseInt(data.period));
+      // Custom day calculations based on period type
+      if (data.periodType === "Days") {
+        dueDate = addDays(contractDate, parseInt(data.period));
+      } else if (data.periodType === "Weeks") {
+        // 1 week = 7 days
+        dueDate = addDays(contractDate, parseInt(data.period) * 7);
       } else if (data.periodType === "Months") {
-        dueDate = addMonths(contractDate, parseInt(data.period));
+        // 1 month = 20 days
+        dueDate = addDays(contractDate, parseInt(data.period) * 20);
       }
       
       if (dueDate) {
@@ -54,19 +57,11 @@ export default function LoanDetailsStep({ data, onChange }) {
 
   const validateForm = () => {
     const newErrors = {
-      loanAmount: '',
       period: '',
       periodType: '',
       contractDate: '',
       rental: ''
     };
-
-    // Loan Amount validation
-    if (!data.loanAmount) {
-      newErrors.loanAmount = 'Loan amount is required';
-    } else if (isNaN(data.loanAmount) || Number(data.loanAmount) <= 0) {
-      newErrors.loanAmount = 'Enter a valid amount';
-    }
 
     // Period validation
     if (!data.period) {
@@ -74,7 +69,7 @@ export default function LoanDetailsStep({ data, onChange }) {
     } else if (isNaN(data.period) || Number(data.period) <= 0 || !Number.isInteger(Number(data.period))) {
       newErrors.period = 'Enter a valid whole number';
     }
-
+    
     // Period Type validation
     if (!data.periodType) {
       newErrors.periodType = 'Period type is required';
@@ -148,9 +143,15 @@ export default function LoanDetailsStep({ data, onChange }) {
     const principal = parseFloat(data.loanAmount);
     let periodInYears;
     
-    if (data.periodType === "Weeks") {
+    // Custom period calculations
+    if (data.periodType === "Days") {
+      // 365 days in a year
+      periodInYears = parseFloat(data.period) / 365;
+    } else if (data.periodType === "Weeks") {
+      // 52 weeks in a year (52 * 7 = 364 days, close enough to 365)
       periodInYears = parseFloat(data.period) / 52;
     } else if (data.periodType === "Months") {
+      // 12 months in a year (as specified)
       periodInYears = parseFloat(data.period) / 12;
     } else {
       return 0;
@@ -192,52 +193,26 @@ export default function LoanDetailsStep({ data, onChange }) {
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Loan Details</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Loan Type */}
-        <div className="space-y-2">
-          <Label htmlFor="loanType" className="flex items-center">
-            Loan Type
-          </Label>
-          <Select
-            value={data.loanType || ''}
-            onValueChange={(value) => {
-              handleChange('loanType', value);
-              // Set corresponding loan type name
-              if (value === "MBL") {
-                handleChange('loanTypeName', "Micro Business Loan");
-              } else if (value === "AUTO") {
-                handleChange('loanTypeName', "Auto Loan");
-              }
-            }}
-            disabled={!!data.loanType} // Disable if it's already set
-          >
-            <SelectTrigger id="loanType" className="bg-gray-50">
-              <SelectValue placeholder="Select loan type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MBL">MBL - Micro Business Loan</SelectItem>
-              <SelectItem value="AUTO">AUTO - Auto Loan</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Display card with previously entered loan details */}
+      <div className="border rounded-lg overflow-hidden">
+        <div className="bg-gray-50 p-3 border-b flex items-center">
+          <FileText className="h-5 w-5 mr-2 text-gray-500" />
+          <h3 className="font-medium">Loan Information</h3>
         </div>
-
-        {/* Loan Amount */}
-        <div className="space-y-2">
-          <Label htmlFor="loanAmount" className="flex items-center">
-            Loan Amount <span className="text-red-500 ml-1">*</span>
-          </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">LKR</span>
-            <Input
-              id="loanAmount"
-              type="number"
-              value={data.loanAmount || ''}
-              onChange={(e) => handleChange('loanAmount', e.target.value)}
-              placeholder="0.00"
-              className={`pl-12 ${errors.loanAmount ? "border-red-500" : ""}`}
-            />
+        
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          <div>
+            <span className="text-sm text-gray-500 block mb-1">Loan Type</span>
+            <span className="font-medium">
+              {data.loanTypeName || (data.loanType === "MBL" ? "Micro Business Loan" : 
+                                    data.loanType === "AUTO" ? "Auto Loan" : data.loanType || "Not specified")}
+            </span>
           </div>
-          {errors.loanAmount && <p className="text-red-500 text-xs mt-1">{errors.loanAmount}</p>}
+          
+          <div>
+            <span className="text-sm text-gray-500 block mb-1">Loan Amount</span>
+            <span className="font-medium">LKR {formatCurrency(data.loanAmount)}</span>
+          </div>
         </div>
       </div>
 
@@ -265,8 +240,12 @@ export default function LoanDetailsStep({ data, onChange }) {
           <RadioGroup
             value={data.periodType || ''}
             onValueChange={(value) => handleChange('periodType', value)}
-            className="flex space-x-4"
+            className="flex flex-wrap gap-4"
           >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Days" id="periodDays" />
+              <Label htmlFor="periodDays">Days</Label>
+            </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="Weeks" id="periodWeeks" />
               <Label htmlFor="periodWeeks">Weeks</Label>
@@ -277,6 +256,7 @@ export default function LoanDetailsStep({ data, onChange }) {
             </div>
           </RadioGroup>
           {errors.periodType && <p className="text-red-500 text-xs mt-1">{errors.periodType}</p>}
+          
         </div>
       </div>
 
@@ -372,7 +352,8 @@ export default function LoanDetailsStep({ data, onChange }) {
               
               <div>
                 <span className="text-sm text-gray-500 block mb-1">
-                  {data.periodType === "Weeks" ? "Weekly" : "Monthly"} Rental
+                  {data.periodType === "Days" ? "Daily" : 
+                   data.periodType === "Weeks" ? "Weekly" : "Monthly"} Rental
                 </span>
                 <span className="font-medium">LKR {formatCurrency(data.rental)}</span>
               </div>
