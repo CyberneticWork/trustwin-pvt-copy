@@ -16,27 +16,47 @@ export async function GET(req) {
 
     let clients = [];
     if (filter && query) {
+      // Check if partial matching is requested
+      const partial = searchParams.get('partial') === 'true';
+      
       let sql = 'SELECT id, fullname, nic, gender, location, district, address, telno FROM customer WHERE ';
       let params = [];
-      switch (filter) {
-        case 'name':
-          sql += 'fullname LIKE ?';
-          params.push(`%${query}%`);
-          break;
-        case 'nic':
-          sql += 'nic LIKE ?';
-          params.push(`%${query}%`);
-          break;
-        case 'id':
-          sql += 'id = ?';
-          params.push(query);
-          break;
-        case 'telno':
-          sql += 'telno LIKE ?';
-          params.push(`%${query}%`);
-          break;
-        default:
-          return NextResponse.json({ error: 'Unknown filter' }, { status: 400 });
+      
+      // Handle special cases for partial matching
+      let finalQuery = query;
+      if (filter === 'nic' && partial) {
+        // For NIC, allow partial matching but prioritize exact matches
+        sql += `(
+          nic = ?
+          OR nic LIKE ?
+          OR nic LIKE ?
+          OR nic LIKE ?
+        )`;
+        params.push(query.toUpperCase());
+        params.push(`${query.toUpperCase()}%`);
+        params.push(`%${query.toUpperCase()}%`);
+        params.push(`%${query.toUpperCase()}`);
+      } else {
+        switch (filter) {
+          case 'name':
+            sql += 'fullname LIKE ?';
+            params.push(`%${query}%`);
+            break;
+          case 'nic':
+            sql += 'nic = ?';
+            params.push(query.toUpperCase());
+            break;
+          case 'id':
+            sql += 'id = ?';
+            params.push(query);
+            break;
+          case 'telno':
+            sql += 'telno LIKE ?';
+            params.push(`%${query}%`);
+            break;
+          default:
+            return NextResponse.json({ error: 'Unknown filter' }, { status: 400 });
+        }
       }
       console.log('[API] SQL:', sql, 'PARAMS:', params);
       [clients] = await connection.execute(sql, params);

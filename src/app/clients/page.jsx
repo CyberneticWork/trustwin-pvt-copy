@@ -19,14 +19,15 @@ export default function ClientPage() {
   const handleSearch = async (filter, query) => {
     setLoading(true);
     setError("");
-    let finalQuery = query;
+    let finalQuery = query.trim();
+    
+    // Handle customer ID format
     if (filter === "id") {
-      // Convert CLN-002 to 2, CLN-015 to 15, etc.
-      const match = query.match(/^CLN-(\d{1,})$/i);
+      const match = finalQuery.match(/^CLN-(\d{1,})$/i);
       if (match) {
-        finalQuery = String(parseInt(match[1], 10)); // Remove leading zeros
-      } else if (/^\d+$/.test(query)) {
-        finalQuery = query; // Allow raw numbers
+        finalQuery = String(parseInt(match[1], 10));
+      } else if (/^\d+$/.test(finalQuery)) {
+        finalQuery = finalQuery;
       } else {
         setClients([]);
         setError("Customer ID must be in the format CLN-XXX or a number.");
@@ -34,8 +35,14 @@ export default function ClientPage() {
         return;
       }
     }
+    
+    // For NIC, allow partial matching
+    if (filter === "nic") {
+      finalQuery = finalQuery.toLowerCase();
+    }
+
     try {
-      const res = await fetch(`/api/customer/list?filter=${filter}&query=${encodeURIComponent(finalQuery)}`);
+      const res = await fetch(`/api/customer/list?filter=${filter}&query=${encodeURIComponent(finalQuery)}&partial=true`);
       const data = await res.json();
       if (!res.ok) {
         setClients([]);
