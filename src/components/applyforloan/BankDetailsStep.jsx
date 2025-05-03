@@ -16,9 +16,9 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
     branchName: '',
     bankAccountPeriod: '',
     bankTurnover: {
-      jan: '',
-      feb: '',
-      mar: ''
+      month1: '',
+      month2: '',
+      month3: ''
     }
   });
 
@@ -35,9 +35,9 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
       branchName: '',
       bankAccountPeriod: '',
       bankTurnover: {
-        jan: '',
-        feb: '',
-        mar: ''
+        month1: '',
+        month2: '',
+        month3: ''
       }
     };
 
@@ -69,16 +69,16 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
     }
 
     // Bank Turnover validations (optional but must be valid numbers if provided)
-    if (data.bankTurnover?.jan && (isNaN(data.bankTurnover.jan) || Number(data.bankTurnover.jan) < 0)) {
-      newErrors.bankTurnover.jan = 'Must be a valid number';
+    if (data.bankTurnover?.month1 && (isNaN(data.bankTurnover.month1) || Number(data.bankTurnover.month1) < 0)) {
+      newErrors.bankTurnover.month1 = 'Must be a valid number';
     }
     
-    if (data.bankTurnover?.feb && (isNaN(data.bankTurnover.feb) || Number(data.bankTurnover.feb) < 0)) {
-      newErrors.bankTurnover.feb = 'Must be a valid number';
+    if (data.bankTurnover?.month2 && (isNaN(data.bankTurnover.month2) || Number(data.bankTurnover.month2) < 0)) {
+      newErrors.bankTurnover.month2 = 'Must be a valid number';
     }
     
-    if (data.bankTurnover?.mar && (isNaN(data.bankTurnover.mar) || Number(data.bankTurnover.mar) < 0)) {
-      newErrors.bankTurnover.mar = 'Must be a valid number';
+    if (data.bankTurnover?.month3 && (isNaN(data.bankTurnover.month3) || Number(data.bankTurnover.month3) < 0)) {
+      newErrors.bankTurnover.month3 = 'Must be a valid number';
     }
 
     setErrors(newErrors);
@@ -96,7 +96,7 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
     
     // Clear error when field is edited
     if (field.includes('.')) {
-      // Handle nested fields like bankTurnover.jan
+      // Handle nested fields like bankTurnover.month1
       const [parent, child] = field.split('.');
       setErrors(prev => ({
         ...prev,
@@ -245,74 +245,74 @@ export default function BankDetailsStep({ data, onChange, onNestedChange }) {
       <div className="pt-4 border-t">
         <h3 className="font-medium mb-4">Monthly Bank Turnover (Last 3 months)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* January */}
+          {/* 1 Month */}
           <div className="space-y-2">
-            <Label htmlFor="turnoverJan">
-              January
+            <Label htmlFor="turnoverMonth1">
+              1 Month
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">LKR</span>
               <Input
-                id="turnoverJan"
+                id="turnoverMonth1"
                 type="number"
-                value={data.bankTurnover?.jan || ''}
-                onChange={(e) => handleNestedChange('bankTurnover', 'jan', e.target.value)}
+                value={data.bankTurnover?.month1 || ''}
+                onChange={(e) => handleNestedChange('bankTurnover', 'month1', e.target.value)}
                 placeholder="0.00"
-                className={`pl-12 ${errors.bankTurnover?.jan ? "border-red-500" : ""}`}
+                className={`pl-12 ${errors.bankTurnover?.month1 ? "border-red-500" : ""}`}
               />
             </div>
-            {errors.bankTurnover?.jan && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.jan}</p>}
+            {errors.bankTurnover?.month1 && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.month1}</p>}
           </div>
 
-          {/* February */}
+          {/* 2 Month */}
           <div className="space-y-2">
-            <Label htmlFor="turnoverFeb">
-              February
+            <Label htmlFor="turnoverMonth2">
+              2 Month
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">LKR</span>
               <Input
-                id="turnoverFeb"
+                id="turnoverMonth2"
                 type="number"
-                value={data.bankTurnover?.feb || ''}
-                onChange={(e) => handleNestedChange('bankTurnover', 'feb', e.target.value)}
+                value={data.bankTurnover?.month2 || ''}
+                onChange={(e) => handleNestedChange('bankTurnover', 'month2', e.target.value)}
                 placeholder="0.00"
-                className={`pl-12 ${errors.bankTurnover?.feb ? "border-red-500" : ""}`}
+                className={`pl-12 ${errors.bankTurnover?.month2 ? "border-red-500" : ""}`}
               />
             </div>
-            {errors.bankTurnover?.feb && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.feb}</p>}
+            {errors.bankTurnover?.month2 && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.month2}</p>}
           </div>
 
-          {/* March */}
+          {/* 3 Month */}
           <div className="space-y-2">
-            <Label htmlFor="turnoverMar">
-              March
+            <Label htmlFor="turnoverMonth3">
+              3 Month
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">LKR</span>
               <Input
-                id="turnoverMar"
+                id="turnoverMonth3"
                 type="number"
-                value={data.bankTurnover?.mar || ''}
-                onChange={(e) => handleNestedChange('bankTurnover', 'mar', e.target.value)}
+                value={data.bankTurnover?.month3 || ''}
+                onChange={(e) => handleNestedChange('bankTurnover', 'month3', e.target.value)}
                 placeholder="0.00"
-                className={`pl-12 ${errors.bankTurnover?.mar ? "border-red-500" : ""}`}
+                className={`pl-12 ${errors.bankTurnover?.month3 ? "border-red-500" : ""}`}
               />
             </div>
-            {errors.bankTurnover?.mar && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.mar}</p>}
+            {errors.bankTurnover?.month3 && <p className="text-red-500 text-xs mt-1">{errors.bankTurnover.month3}</p>}
           </div>
         </div>
 
         {/* Average Monthly Turnover */}
-        {(data.bankTurnover?.jan || data.bankTurnover?.feb || data.bankTurnover?.mar) && (
+        {(data.bankTurnover?.month1 || data.bankTurnover?.month2 || data.bankTurnover?.month3) && (
           <div className="mt-4 p-3 bg-blue-50 rounded-md">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Average Monthly Turnover</span>
               <span className="font-medium">
                 LKR {formatCurrency((
-                  (parseFloat(data.bankTurnover?.jan || 0) + 
-                   parseFloat(data.bankTurnover?.feb || 0) + 
-                   parseFloat(data.bankTurnover?.mar || 0)) / 3
+                  (parseFloat(data.bankTurnover?.month1 || 0) + 
+                   parseFloat(data.bankTurnover?.month2 || 0) + 
+                   parseFloat(data.bankTurnover?.month3 || 0)) / 3
                 ).toFixed(2))}
               </span>
             </div>
