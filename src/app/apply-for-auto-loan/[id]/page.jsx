@@ -640,7 +640,7 @@ export default function ApplyForAutoLoanPage() {
           loanId: params.id,
           customerId: loanData.customerId,
           comments: loanData.comments || '', // Make comments optional
-          status: 'pending' // Set status to pending for admin approval
+          status: 'pending'   
         })
       });
 

@@ -20,12 +20,54 @@ export async function POST(request) {
     // Connect to the database
     connection = await connectDB();
 
-    // Update the loan application with comments and status
+    // First, generate the contract ID
+    const [loanData] = await connection.execute(
+      `SELECT ala.id, ala.CROid, e.branchID 
+       FROM auto_loan_applications ala
+       JOIN employees e ON ala.CROid = e.id 
+       WHERE ala.id = ?`,
+      [parseInt(loanId, 10)]
+    );
+
+    if (loanData.length === 0) {
+      return NextResponse.json(
+        { 
+          code: 'NOT_FOUND', 
+          message: 'Loan application not found' 
+        },
+        { status: 404 }
+      );
+    }
+
+    const branchId = loanData[0].branchID;
+    
+    // Get branch shortcode
+    const [branches] = await connection.execute(
+      'SELECT shortcode FROM branches WHERE id = ?',
+      [branchId]
+    );
+
+    if (branches.length === 0) {
+      return NextResponse.json(
+        { 
+          code: 'ERROR', 
+          message: 'Branch not found' 
+        },
+        { status: 500 }
+      );
+    }
+
+    const branchCode = branches[0].shortcode;
+
+    // Format contract ID: branchCode + 'MB' + 'HP' + 5-digit loan ID
+    const contractId = `${branchCode}MBHP${String(loanId).padStart(5, '0')}`;
+
+    // Update the loan application with contract ID, comments and status
     const [result] = await connection.execute(
       `UPDATE auto_loan_applications 
-       SET comment = ?, status = ?, updated_at = NOW() 
+       SET contractid = ?, comment = ?, status = ?, updated_at = NOW() 
        WHERE id = ? AND customer_id = ?`,
-      [comments || '', 'under the review', loanId, customerId]
+      [contractId, comments || '', 'under the review', loanId, customerId]
     );
 
     if (result.affectedRows === 0) {

@@ -725,7 +725,7 @@ export default function ApplyForLoanPage() {
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  disabled={loanData.submitted}
+                 
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {loanData.submitted ? "Submitted" : "Submit Application"}

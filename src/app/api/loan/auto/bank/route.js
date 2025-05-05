@@ -57,16 +57,16 @@ export async function POST(req) {
           period, Turnover1, Turnover2, Turnover3) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          customerId,
-          loanId,
-          bankData.accountType,
-          bankData.bankName,
-          bankData.accountNumber,
-          bankData.branchName,
-          bankData.bankAccountPeriod,
-          bankData.bankTurnover.month1 || 0,
-          bankData.bankTurnover.month2 || 0,
-          bankData.bankTurnover.month3 || 0
+          parseInt(customerId),
+          parseInt(loanId),
+          bankData.acctype,
+          bankData.bank,
+          bankData.acno,
+          bankData.branch,
+          bankData.period,
+          bankData.month1 || 0,
+          bankData.month2 || 0,
+          bankData.month3 || 0
         ]
       );
     }

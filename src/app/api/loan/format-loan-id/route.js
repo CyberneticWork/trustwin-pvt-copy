@@ -30,17 +30,51 @@ export async function POST(req) {
       throw new Error("Failed to get business details");
     }
 
-    // Format loan ID
-    const locationCode = customerData.customer.location.substring(0, 2).toUpperCase();
-    const productCode = loanType.substring(0, 2).toUpperCase();
-    const periodCode = periodType === "Weeks" ? "W" : 
-                      periodType === "Monthly" ? "M" : 
-                      periodType === "Daily" ? "D" : "Y";
-    const formattedLoanId = `${locationCode}${productCode}${periodCode}${String(loanId).padStart(5, '0')}`;
-
-    // Update loan_bussiness table
     const connection = await connectDB();
     
+    // Get CRO ID, loan type, and employee details from loan_business and employees tables
+    const [loanBusiness] = await connection.execute(
+      `SELECT lb.CROid, lb.type, lb.term, e.branchID 
+       FROM loan_bussiness lb
+       JOIN employees e ON lb.CROid = e.id 
+       WHERE lb.id = ?`,
+      [parseInt(loanId, 10)]
+    );
+
+    if (loanBusiness.length === 0) {
+      throw new Error('Loan business record not found');
+    }
+
+    const branchId = loanBusiness[0].branchID;
+    
+    // Get branch shortcode
+    const [branches] = await connection.execute(
+      'SELECT shortcode FROM branches WHERE id = ?',
+      [branchId]
+    );
+
+    if (branches.length === 0) {
+      throw new Error('Branch not found for the employee');
+    }
+
+    const branchCode = branches[0].shortcode;
+    
+    // Determine frequency code from term
+    const term = loanBusiness[0].term.toLowerCase();
+    let frequencyCode = 'M'; // Default to Monthly
+    
+    if (term.includes('day') || term === 'daily') {
+      frequencyCode = 'D';
+    } else if (term.includes('week') || term === 'weekly') {
+      frequencyCode = 'W';
+    } else if (term.includes('year') || term === 'annually') {
+      frequencyCode = 'A';
+    }
+
+    // Format contract ID: branchCode + 'BL' + frequencyCode + loan_id
+    const formattedLoanId = `${branchCode}BL${frequencyCode}${loanId}`;
+    
+    // Update loan_bussiness table with the new contract ID
     await connection.execute(
       `UPDATE loan_bussiness SET contractid = ? WHERE id = ?`,
       [formattedLoanId, parseInt(loanId, 10)]

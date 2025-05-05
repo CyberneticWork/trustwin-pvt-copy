@@ -1,13 +1,38 @@
 import { connectDB } from "@/lib/db";
 
 export async function POST(req) {
+  let connection;
   try {
     const data = await req.json();
     console.log(data);
-    const connection = await connectDB();
+    connection = await connectDB();
 
     // Start transaction
     await connection.beginTransaction();
+
+    // Get CRO ID from loan_business table
+    const [loanBusiness] = await connection.execute(
+      'SELECT CROid FROM loan_bussiness WHERE id = ?',
+      [parseInt(data.loanid)]
+    );
+
+    if (loanBusiness.length === 0) {
+      throw new Error('Loan business record not found');
+    }
+
+    const croId = loanBusiness[0].CROid;
+
+    // Get branch ID from employee table using CRO ID
+    const [employee] = await connection.execute(
+      'SELECT branchid FROM employees WHERE id = ?',
+      [croId]
+    );
+
+    if (employee.length === 0) {
+      throw new Error('Employee not found with CRO ID: ' + croId);
+    }
+
+    const branchId = employee[0].branchid;
 
     try {
       // Generate loan ID
@@ -18,6 +43,12 @@ export async function POST(req) {
         `SELECT id FROM bankdetails WHERE customerid = ? AND loandid = ?`,
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
+
+      // Update loan application with branch ID
+      // await connection.execute(
+      //   'UPDATE loan_application SET branch_id = ? WHERE id = ?',
+      //   [branchId, data.loanid]
+      // );
       
       const bankResult = existingBank.length > 0
         ? await connection.execute(
@@ -49,16 +80,16 @@ export async function POST(req) {
               Turnover1, Turnover2, Turnover3
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              parseInt(data.customerId),
-              parseInt(data.loanid),
-              data.accountType,
-              data.bankName,
-              data.accountNumber,
-              data.branchName,
-              data.bankAccountPeriod,
-              data.bankTurnover.jan,
-              data.bankTurnover.feb,
-              data.bankTurnover.mar
+              parseInt(data.customerId) || null,
+              parseInt(data.loanid) || null,
+              data.accountType || null,
+              data.bankName || null,
+              data.accountNumber || null,
+              data.branchName || null,
+              data.bankAccountPeriod || null,
+              data.bankTurnover?.month1 || 0,
+              data.bankTurnover?.month2 || 0,
+              data.bankTurnover?.month3 || 0
             ]
           );
 

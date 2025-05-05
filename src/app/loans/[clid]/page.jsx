@@ -99,7 +99,7 @@ export default function Home() {
       description: "Flexible leasing options for your business needs.",
       icon: BarChart3,
       color: "bg-green-500",
-      path: '/loans/high-draft'
+      path: '/loans/auto-loan'
     }
   ];
 

@@ -49,7 +49,7 @@ export async function POST(req) {
       // Insert a new record with basic details
       await connection.execute(
         `INSERT INTO businessdetails (
-          customerid, loandid, nature, name, regno, type, address
+          customerid, loandid, nature, name, regno, type, addres
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [1, parseInt(loanId, 10), '', '', '', '', ''] // Default values
       );

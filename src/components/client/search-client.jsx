@@ -53,7 +53,7 @@ export function SearchClient({ clients, onAddNewClick, loading, onSearch, search
   const handleCreateLoan = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
-    router.push(`/loans/${`C-${client.id.toString().padStart(3, '0')}`}`);
+    router.push(`/loans/${`CLN-${client.id.toString().padStart(3, '0')}`}`);
   };
 
   // --- SEARCH HANDLING ---
