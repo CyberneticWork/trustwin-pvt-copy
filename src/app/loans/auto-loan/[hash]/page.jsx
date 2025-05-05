@@ -9,8 +9,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useParams , useRouter } from 'next/navigation'
 
 export default function AutoLoanCalculatorPage() {
+  const params = useParams()
+  console.log(params);
+  const router = useRouter();
   // Function to handle loan application
   const handlePartialPayment = async (loanId, paymentNumber, partialAmount) => {
     try {
@@ -45,19 +49,32 @@ export default function AutoLoanCalculatorPage() {
 
   const handleApplyLoan = async () => {
     try {
-      // Get customer ID from the URL parameter
-      const params = new URLSearchParams(window.location.search);
-      // const customerId = params.get('cid');
-      const customerId = "1";
+      // Get parameters from the URL
+      const hash = params.hash;
       
-      if (!customerId) {
-        alert('Customer ID is required');
+      // Decode base64 hash
+      const decodedHash = atob(hash);
+      console.log(decodedHash);
+    const list = decodedHash.split(',');
+    console.log(list);
+      
+      // Get customer ID from the URL parameter
+      const customerId = list[2].split('=')[1];
+      const CROid = list[1].split('=')[1];
+      const Addby = list[0].split('=')[1];
+      
+      if (!customerId || !CROid || !Addby) {
+        alert('Required parameters are missing');
         return;
       }
-
+      
+      console.log(customerId, CROid, Addby);
+      
       // Prepare loan data
       const loanData = {
-        customer_id: customerId,
+        customer_id: parseInt(customerId),
+        CROid: parseInt(CROid),
+        Addby: parseInt(Addby),
         vehicle_price: vehiclePrice,
         down_payment: downPayment,
         trade_in_value: tradeInValue,
@@ -105,10 +122,13 @@ export default function AutoLoanCalculatorPage() {
 
       if (result.code === 'SUCCESS') {
         // Loan application created successfully
-        alert('Loan application submitted successfully!');
+        const loanId = result.loan_id;
+        alert(`Loan application submitted successfully! Your loan ID is: ${loanId}`);
+        console.log('Loan ID:', loanId);
+        router.push(`/apply-for-auto-loan/${loanId}`);
         
         // Optionally redirect to a confirmation page
-        // window.location.href = `/loan/auto/confirmation?loan_id=${result.loan_id}`;
+        // window.location.href = `/loan/auto/confirmation?loan_id=${loanId}`;
       } else {
         throw new Error(result.message || 'Failed to create loan application');
       }

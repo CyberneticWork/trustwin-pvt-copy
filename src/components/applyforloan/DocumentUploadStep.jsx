@@ -20,6 +20,12 @@ export default function DocumentUploadStep({ data, onChange }) {
   });
 
   const isAutoLoan = data.loanType === "AUTO";
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState({
+    residence: null,
+    business: null,
+    paysheet: null
+  });
 
   useEffect(() => {
     const newPreviews = {};
@@ -112,12 +118,94 @@ export default function DocumentUploadStep({ data, onChange }) {
   };
 
   const handleImageRemove = (type) => {
-    const updatedImages = {
-      ...data.investigationImages,
-      [type]: null,
-    };
-
+    const updatedImages = { ...data.investigationImages };
+    delete updatedImages[type];
+    setPreviews({ ...previews, [type]: null });
+    setUploadStatus({ ...uploadStatus, [type]: null });
     onChange("investigationImages", updatedImages);
+  };
+
+  const uploadImage = async (type, file) => {
+    if (!file) return null;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('loan_id', data.loanId);
+    
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, let the browser set it with the correct boundary
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+      
+      return result; // The API returns the file path or URL
+    } catch (error) {
+      console.error(`Error uploading ${type}:`, error);
+      throw error;
+    }
+  };
+
+  const handleUploadAll = async () => {
+    if (!data.loanId) {
+      alert('Please save the loan application first');
+      return;
+    }
+
+    setIsUploading(true);
+    const types = ['residence', 'business', 'paysheet'];
+    const newUploadStatus = { ...uploadStatus };
+    
+    try {
+      for (const type of types) {
+        if (!data.investigationImages?.[type]) continue;
+        
+        try {
+          newUploadStatus[type] = 'uploading';
+          setUploadStatus({ ...newUploadStatus });
+          
+          const file = data.investigationImages[type];
+          const result = await uploadImage(type, file);
+          
+          if (result) {
+            newUploadStatus[type] = 'success';
+            // Update the image URL in the parent component
+            const updatedImages = {
+              ...data.investigationImages,
+              [type]: result.url || result.path || file.name
+            };
+            
+          } else {
+            throw new Error('No result from server');
+          }
+        } catch (error) {
+          console.error(`Failed to upload ${type}:`, error);
+          newUploadStatus[type] = 'error';
+          setUploadStatus({ ...newUploadStatus });
+        }
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'success':
+        return <span className="text-green-500">✓</span>;
+      case 'error':
+        return <span className="text-red-500">✗</span>;
+      case 'uploading':
+        return <span className="animate-spin">⟳</span>;
+      default:
+        return null;
+    }
   };
 
   // Helper function to check if a file is an image
@@ -133,7 +221,16 @@ export default function DocumentUploadStep({ data, onChange }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Required Documentation</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Required Documentation</h2>
+        <Button
+          onClick={handleUploadAll}
+          disabled={isUploading || !data.investigationImages || Object.keys(data.investigationImages).length === 0}
+          className="flex items-center gap-2"
+        >
+          {isUploading ? 'Uploading...' : 'Upload All Documents'}
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Residence Selfie */}
@@ -149,11 +246,18 @@ export default function DocumentUploadStep({ data, onChange }) {
           >
             {previews.residence ? (
               <div className="relative h-full">
-                <img
-                  src={previews.residence}
-                  alt="Residence Selfie"
-                  className="h-full w-full object-cover rounded"
-                />
+                <div className="relative h-full w-full">
+                  <img
+                    src={previews.residence}
+                    alt="Residence Selfie"
+                    className="h-full w-full object-cover rounded"
+                  />
+                  {uploadStatus.residence && (
+                    <div className="absolute top-2 right-2 bg-white/80 rounded-full p-1">
+                      {getStatusIcon(uploadStatus.residence)}
+                    </div>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -201,11 +305,18 @@ export default function DocumentUploadStep({ data, onChange }) {
             >
               {previews.business ? (
                 <div className="relative h-full">
-                  <img
-                    src={previews.business}
-                    alt="Business Selfie"
-                    className="h-full w-full object-cover rounded"
-                  />
+                  <div className="relative h-full w-full">
+                    <img
+                      src={previews.business}
+                      alt="Business Selfie"
+                      className="h-full w-full object-cover rounded"
+                    />
+                    {uploadStatus.business && (
+                      <div className="absolute top-2 right-2 bg-white/80 rounded-full p-1">
+                        {getStatusIcon(uploadStatus.business)}
+                      </div>
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"

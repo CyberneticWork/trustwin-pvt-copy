@@ -65,12 +65,14 @@ export async function POST(req) {
       }
 
       // Insert into auto_loan_applications
+      console.log(data);
+      
       const [loanResult] = await connection.execute(
         `INSERT INTO auto_loan_applications (
           customer_id, vehicle_price, down_payment, trade_in_value, loan_amount,
           loan_term_months, interest_rate, monthly_payment, total_interest,
-          total_payable, effective_rate, client_receiving_amount, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          total_payable, effective_rate, client_receiving_amount, status ,CROid , Addby
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.customer_id,
           data.vehicle_price,
@@ -84,7 +86,9 @@ export async function POST(req) {
           data.total_payable,
           data.effective_rate,
           data.client_receiving_amount,
-          'pending'
+          'pending',
+          data.CROid,
+          data.Addby
         ]
       );
 

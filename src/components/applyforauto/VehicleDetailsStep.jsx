@@ -1,7 +1,7 @@
 // components/applyforauto/VehicleDetailsStep.jsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -44,8 +44,8 @@ const vehicleFormSchema = z.object({
   meterReading: z.string().optional(),
   valuationAmount: z.string().optional(),
   valuerName: z.string().optional(),
-  downPayment: z.string().optional(),
 });
+let uploadedFiles = [];
 
 export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
   // Create refs for file inputs
@@ -69,7 +69,6 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
       meterReading: data.vehicle?.meterReading || '',
       valuationAmount: data.vehicle?.valuationAmount || '',
       valuerName: data.vehicle?.valuerName || '',
-      downPayment: data.vehicle?.downPayment || '',
     }
   });
 
@@ -78,10 +77,18 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
     crBook: data.vehicle?.documents?.crBook || null,
     vehicleImages: data.vehicle?.documents?.vehicleImages || []
   });
+  
+  const [uploadStatus, setUploadStatus] = useState({
+    isUploading: false,
+    uploadedFiles: [],
+    progress: {}
+  });
 
   const handleTextChange = (name, value, field) => {
     field.onChange(value);
-    onNestedChange('vehicle', name, value);
+    if (name !== 'downPayment') {
+      onNestedChange('vehicle', name, value);
+    }
   };
 
   const handleSelectChange = (name, value, field) => {
@@ -96,19 +103,19 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
   };
   
   const handleFileChange = (docType, files) => {
-    // In a real application, you would handle file uploads to your server
-    // and store references in your database
     if (docType === 'valuation' && files && files.length > 0) {
-      setDocumentsState(prev => ({ ...prev, valuation: files[0] }));
+      const file = files[0];
+      setDocumentsState(prev => ({ ...prev, valuation: file }));
       onNestedChange('vehicle', 'documents', { 
         ...data.vehicle?.documents, 
-        valuation: files[0]?.name || null 
+        valuation: file 
       });
     } else if (docType === 'crBook' && files && files.length > 0) {
-      setDocumentsState(prev => ({ ...prev, crBook: files[0] }));
+      const file = files[0];
+      setDocumentsState(prev => ({ ...prev, crBook: file }));
       onNestedChange('vehicle', 'documents', { 
         ...data.vehicle?.documents, 
-        crBook: files[0]?.name || null 
+        crBook: file 
       });
     } else if (docType === 'vehicleImages' && files && files.length > 0) {
       const newImages = Array.from(files);
@@ -116,8 +123,102 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
       setDocumentsState(prev => ({ ...prev, vehicleImages: updatedImages }));
       onNestedChange('vehicle', 'documents', { 
         ...data.vehicle?.documents, 
-        vehicleImages: updatedImages.map(img => img.name) 
+        vehicleImages: updatedImages
       });
+    }
+  };
+
+  // Function to save vehicle details and documents
+  const saveVehicleDetails = async () => {
+    try {
+      // First upload all files if there are any
+      let valuationReport = '';
+      let crBook = '';
+      let vehicleImage = '';
+      
+      // Only upload files if they exist in the documents state
+      const hasFilesToUpload = documentsState.valuation || documentsState.crBook || documentsState.vehicleImages.length > 0;
+      
+      if (hasFilesToUpload) {
+        // const uploadedFiles = await handleUploadFiles();
+        console.log('Uploaded files:', JSON.stringify(uploadedFiles));
+        console.log('Uploaded files:', uploadedFiles);
+        
+        
+        // Get the filenames of the uploaded files from the PHP API response
+        valuationReport = uploadedFiles.find(f => f.type === 'valuation')?.url || '';
+        crBook = uploadedFiles.find(f => f.type === 'crBook')?.url || '';
+        // For vehicle images, we'll take the first one if available
+        vehicleImage = uploadedFiles.find(f => f.type === 'vehicleImage')?.url || '';
+      }
+      
+      // Get current form values
+      const formValues = form.getValues();
+      console.log('Form values:', formValues);
+      
+      // Prepare vehicle data for database
+      const vehicleDataForDb = {
+        loanId: data.loanId,
+        type: formValues.type || '',
+        make: formValues.make || '',
+        model: formValues.model || '',
+        vehicleNo: formValues.vehicleNo || '',
+        chassisNo: formValues.chassisNo || '',
+        engineNo: formValues.engineNo || '',
+        firstRegDate: formValues.firstRegDate || null,
+        engineCapacity: formValues.engineCapacity || '',
+        yom: formValues.yom || null,
+        meterReading: formValues.meterReading || null,
+        valuerName: formValues.valuerName || '',
+        // Use the uploaded file URLs or existing ones from form data
+        valuationReport: valuationReport || formValues.valuationReport || '',
+        crBook: crBook || formValues.crBook || '',
+        vehicleImage: vehicleImage || formValues.vehicleImage || ''
+      };
+      
+      console.log('Sending to API:', vehicleDataForDb);
+
+      // Save vehicle details to database
+      const response = await fetch('/api/loan/auto/save-vehicle-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(vehicleDataForDb)
+      });
+
+      const result = await response.json();
+
+      if (result.code !== 'SUCCESS') {
+        throw new Error(result.message || 'Failed to save vehicle details');
+      }
+      
+      // Update the form data with the saved information
+      const updatedFormData = {
+        ...formValues,
+        // Only update the file fields if we have new values
+        ...(valuationReport && { valuationReport }),
+        ...(crBook && { crBook }),
+        ...(vehicleImage && { vehicleImage }),
+        vehicleId: result.data.vehicleId
+      };
+      
+      // Call the parent's onChange with the updated data
+      onChange(updatedFormData);
+      
+      // Also update the documents state to clear the uploaded files
+      setDocumentsState({
+        valuation: null,
+        crBook: null,
+        vehicleImages: []
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving vehicle details:', error);
+      // Show error message to user
+      alert(`Error saving vehicle details: ${error.message}`);
+      return false;
     }
   };
   
@@ -143,9 +244,97 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
     return '0.00';
   };
 
+  // Upload all files one by one
+  const handleUploadFiles = async () => {
+    try {
+      setUploadStatus(prev => ({ ...prev, isUploading: true }));
+      
+      const filesToUpload = [
+        { type: 'valuation', file: documentsState.valuation },
+        { type: 'crBook', file: documentsState.crBook },
+        ...documentsState.vehicleImages.map(file => ({ type: 'vehicleImage', file }))
+      ].filter(item => item.file);
+
+     
+      
+      for (const { type, file } of filesToUpload) {
+        try {
+          setUploadStatus(prev => ({
+            ...prev,
+            progress: { ...prev.progress, [file.name]: 'uploading' }
+          }));
+          
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('type', type);
+          formData.append('customerId', data.customerId);
+          formData.append('loanId', data.loanId);
+          
+          const response = await fetch('/api/loan/auto/upload-document', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+          }
+          
+          const result = await response.json();
+          console.log('Upload result:', result);
+          
+          if (result && result.code === 'SUCCESS') {
+            uploadedFiles.push({
+              type,
+              name: file.name,
+              url: result.data.filename,
+              uploadedAt: new Date().toISOString()
+            });
+            
+            setUploadStatus(prev => ({
+              ...prev,
+              progress: { ...prev.progress, [file.name]: 'done' }
+            }));
+          } else {
+            throw new Error(result?.message || 'Upload failed');
+          }
+          console.log('Uploaded files:', uploadedFiles);
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          setUploadStatus(prev => ({
+            ...prev,
+            progress: { ...prev.progress, [file.name]: 'error' }
+          }));
+        }
+      }
+      
+      setUploadStatus(prev => ({
+        ...prev,
+        isUploading: false,
+        uploadedFiles: [...prev.uploadedFiles, ...uploadedFiles]
+      }));
+      
+      return uploadedFiles;
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      setUploadStatus(prev => ({ ...prev, isUploading: false }));
+      throw error;
+    }
+  };
+
+  // Expose the saveVehicleDetails method to parent component
+  const rootRef = useRef(null);
+  
+  useEffect(() => {
+    if (rootRef.current) {
+      rootRef.current.saveVehicleDetails = saveVehicleDetails;
+      rootRef.current.uploadFiles = handleUploadFiles;
+    }
+  }, [saveVehicleDetails, handleUploadFiles]);
+
   return (
     <Form {...form}>
-      <div className="space-y-6">
+      <div className="space-y-6" ref={rootRef} data-vehicle-step>
         <div>
           <h2 className="text-xl font-semibold mb-2">Vehicle Details</h2>
           <p className="text-sm text-gray-500">
@@ -444,16 +633,7 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
                 )}
               />
 
-              <div className="space-y-2">
-                <FormLabel>Loan Amount</FormLabel>
-                <div className="p-2 bg-gray-50 border rounded-md flex items-center justify-between">
-                  <span>LKR</span>
-                  <span className="font-medium text-blue-600">{calculateLoanAmount()}</span>
-                </div>
-                <FormDescription className="text-xs">
-                  Valuation amount minus down payment
-                </FormDescription>
-              </div>
+            
             </div>
           </CardContent>
         </Card>
@@ -520,50 +700,108 @@ export default function VehicleDetailsStep({ data, onChange, onNestedChange }) {
               </div>
 
               <div className="col-span-1 sm:col-span-2 space-y-3">
-                <div>
-                  <FormLabel>Vehicle Images</FormLabel>
-                  <div className="mt-1">
-                    <Input
-                      type="file"
-                      multiple
-                      className="hidden"
-                      ref={vehicleImagesInputRef}
-                      onChange={(e) => handleFileChange('vehicleImages', e.target.files)}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => vehicleImagesInputRef.current?.click()}
-                      className="w-full"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Vehicle Images
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-1">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <FormLabel>Vehicle Images</FormLabel>
+                    <p className="text-xs text-gray-500">
                       Upload images of the vehicle from different angles (front, back, sides, interior)
                     </p>
                   </div>
+                  <Button
+                    type="button"
+                    onClick={handleUploadFiles}
+                    disabled={uploadStatus.isUploading || 
+                      (!documentsState.valuation && !documentsState.crBook && documentsState.vehicleImages.length === 0)}
+                    className="ml-4"
+                  >
+                    {uploadStatus.isUploading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload All Files
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    ref={vehicleImagesInputRef}
+                    onChange={(e) => handleFileChange('vehicleImages', e.target.files)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => vehicleImagesInputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Add Vehicle Images
+                  </Button>
+                </div>
+                {/* Upload status */}
+                <div className="space-y-2 mt-2">
+                  {documentsState.valuation && (
+                    <div className="flex items-center text-sm">
+                      <span className="w-40 truncate">{documentsState.valuation.name}</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {uploadStatus.progress[documentsState.valuation.name] === 'uploading' && 'Uploading...'}
+                        {uploadStatus.progress[documentsState.valuation.name] === 'done' && '✓ Uploaded'}
+                        {uploadStatus.progress[documentsState.valuation.name] === 'error' && '✗ Error'}
+                      </span>
+                    </div>
+                  )}
+                  {documentsState.crBook && (
+                    <div className="flex items-center text-sm">
+                      <span className="w-40 truncate">{documentsState.crBook.name}</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {uploadStatus.progress[documentsState.crBook.name] === 'uploading' && 'Uploading...'}
+                        {uploadStatus.progress[documentsState.crBook.name] === 'done' && '✓ Uploaded'}
+                        {uploadStatus.progress[documentsState.crBook.name] === 'error' && '✗ Error'}
+                      </span>
+                    </div>
+                  )}
+                  {documentsState.vehicleImages.map((image, index) => (
+                    <div key={index} className="flex items-center text-sm">
+                      <span className="w-40 truncate">{image.name}</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {uploadStatus.progress[image.name] === 'uploading' && 'Uploading...'}
+                        {uploadStatus.progress[image.name] === 'done' && '✓ Uploaded'}
+                        {uploadStatus.progress[image.name] === 'error' && '✗ Error'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Preview of uploaded vehicle images */}
                 {documentsState.vehicleImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {documentsState.vehicleImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-600 overflow-hidden">
-                          {/* In a real app, you'd display the actual image preview */}
-                          {image.name || `Image ${index + 1}`}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Selected Images:</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {documentsState.vehicleImages.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-600 overflow-hidden">
+                            {image.name || `Image ${index + 1}`}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Remove image"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

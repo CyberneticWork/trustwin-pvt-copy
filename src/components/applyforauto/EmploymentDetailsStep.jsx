@@ -1,27 +1,32 @@
 // components/applyforauto/EmploymentDetailsStep.jsx
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { 
+import {
   Form,
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
   FormDescription,
-  FormMessage 
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -33,38 +38,83 @@ const formSchema = z.object({
   natureOfBusinessOrEmployment: z.string().optional(),
   businessType: z.string().optional(),
   businessRegistrationNo: z.string().optional(),
+  employmentType: z.string().optional(),
 });
 
 export default function EmploymentDetailsStep({ data, onChange }) {
   const [employmentType, setEmploymentType] = useState(
-    data.natureOfBusinessOrEmployment ? "employed" : "business"
+    data.employmentType
   );
+
+  // Initialize form with the form hook
+  useEffect(() => {
+    setEmploymentType(data.employmentType);
+  }, [data.employmentType]);
 
   // Initialize form with the form hook
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      businessOrEmployerName: data.businessOrEmployerName || "",
-      businessOrEmploymentPeriod: data.businessOrEmploymentPeriod || "",
-      businessOrEmployerAddress: data.businessOrEmployerAddress || "",
-      natureOfBusinessOrEmployment: data.natureOfBusinessOrEmployment || "",
+      businessOrEmployerName: data.companyName || "",
+      businessOrEmploymentPeriod: data.experienceYears || "",
+      businessOrEmployerAddress: data.businessAddress || "",
+      natureOfBusinessOrEmployment: data.designation || "",
       businessType: data.businessType || "",
-      businessRegistrationNo: data.businessRegistrationNo || "",
-    }
+      businessRegistrationNo: data.companyRegistrationNumber || "",
+      employmentType: data.employmentType || "employee",
+    },
   });
 
+  console.log(form.getValues());
+  
+
   const handleEmploymentTypeChange = (value) => {
+    console.log(value);
     setEmploymentType(value);
+    onChange({ employmentType: value });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    onChange(name, value);
+
+    // Map form field names to parent component field names
+    let fieldName;
+    switch (name) {
+      case 'businessOrEmployerName':
+        fieldName = 'companyName';
+        break;
+      case 'businessOrEmploymentPeriod':
+        fieldName = 'experienceYears';
+        break;
+      case 'businessOrEmployerAddress':
+        fieldName = 'businessAddress';
+        break;
+      case 'natureOfBusinessOrEmployment':
+        fieldName = 'designation';
+        break;
+      case 'businessRegistrationNo':
+        fieldName = employmentType === 'employed' ? 'companyRegistrationNumber' : 'businessRegistrationNo';
+        break;
+      default:
+        fieldName = name;
+    }
+
+    onChange(fieldName, value);
     form.setValue(name, value);
   };
 
   const handleSelectChange = (name, value) => {
-    onChange(name, value);
+    // Map form field names to parent component field names
+    let fieldName;
+    switch (name) {
+      case 'businessType':
+        fieldName = 'businessType';
+        break;
+      default:
+        fieldName = name;
+    }
+
+    onChange(fieldName, value);
     form.setValue(name, value);
   };
 
@@ -87,11 +137,12 @@ export default function EmploymentDetailsStep({ data, onChange }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Select 
-                name="employmentType" 
-                value={employmentType} 
+              <Select
+                name="employmentType"
+                value={employmentType}
                 onValueChange={handleEmploymentTypeChange}
               >
+                {/* handleEmploymentTypeChange(value); */}
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select employment type" />
                 </SelectTrigger>
@@ -121,13 +172,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Employer Name</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Your employer's name" 
+                          placeholder="Your employer's name"
                         />
                       </FormControl>
                     </FormItem>
@@ -141,7 +192,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Employment Period (Years)</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -150,7 +201,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                           type="number"
                           min="0"
                           step="0.5"
-                          placeholder="How long have you worked here" 
+                          placeholder="How long have you worked here"
                         />
                       </FormControl>
                     </FormItem>
@@ -164,13 +215,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem className="col-span-1 sm:col-span-2">
                       <FormLabel>Employer Address</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Your employer's address" 
+                          placeholder="Your employer's address"
                           rows={3}
                         />
                       </FormControl>
@@ -185,13 +236,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Job Title/Position</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Your job title or position" 
+                          placeholder="Your job title or position"
                         />
                       </FormControl>
                     </FormItem>
@@ -204,7 +255,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Employment Type</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(value) => {
                           field.onChange(value);
                           handleSelectChange("businessType", value);
@@ -221,6 +272,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                           <SelectItem value="PartTime">Part-Time</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -244,13 +296,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Business Name</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Your business name" 
+                          placeholder="Your business name"
                         />
                       </FormControl>
                     </FormItem>
@@ -264,13 +316,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Business Registration No.</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Registration number (if applicable)" 
+                          placeholder="Business registration number"
                         />
                       </FormControl>
                     </FormItem>
@@ -284,13 +336,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem className="col-span-1 sm:col-span-2">
                       <FormLabel>Business Address</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Business address" 
+                          placeholder="Business address"
                           rows={3}
                         />
                       </FormControl>
@@ -305,13 +357,13 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Nature of Business</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             handleChange(e);
                           }}
-                          placeholder="Type of business or industry" 
+                          placeholder="Type of business or industry"
                         />
                       </FormControl>
                     </FormItem>
@@ -325,7 +377,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                     <FormItem>
                       <FormLabel>Business Period (Years)</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -334,7 +386,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                           type="number"
                           min="0"
                           step="0.5"
-                          placeholder="How long have you operated this business" 
+                          placeholder="How long have you operated this business"
                         />
                       </FormControl>
                     </FormItem>
@@ -347,7 +399,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Business Type</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(value) => {
                           field.onChange(value);
                           handleSelectChange("businessType", value);
@@ -364,6 +416,7 @@ export default function EmploymentDetailsStep({ data, onChange }) {
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
