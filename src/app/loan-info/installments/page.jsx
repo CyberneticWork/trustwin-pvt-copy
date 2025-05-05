@@ -1,9 +1,25 @@
+// app/loan-info/installments/page.jsx
 "use client";
-import { useState } from "react";
+
+import React from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+
+// Import our custom components
+import ArrearsCalculation from "@/components/installment/ArrearsCalculation";
+import PaymentPopupCard from "@/components/installment/PaymentPopupCard";
+import ReceiptGenerator from "@/components/installment/ReceiptGenerator";
+import TransactionHistoryTable from "@/components/installment/TransactionHistoryTable";
+import LoanSummaryDashboard from "@/components/installment/LoanSummaryDashboard";
 
 export default function InstallmentPage() {
+  // State for payment modal
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
+  
   // Sample previous comments
   const [comments, setComments] = useState([
     {
@@ -22,6 +38,91 @@ export default function InstallmentPage() {
 
   // State for new comment
   const [newComment, setNewComment] = useState("");
+
+  // Personal Information from Excel
+  const personalInfo = {
+    name: "Mr. Shalitha Madhuwantha",
+    nic: "200278900987",
+    gender: "Male",
+    civilStatus: "Single", 
+    dob: "01.05.2002",
+    address: "No.2000/1, Green Land, JeEla",
+    mobile: "776065780",
+    product: "MBL",
+    productType: "BizCash",
+    location: "JaEla",
+    marketingOfficer: ""
+  };
+
+  // Facility Details from Excel - Now with useState to be able to update them
+  const [facilityData, setFacilityData] = useState({
+    group1: {
+      contractNo: "JEMBL0000500",
+      contractDate: "05.05.2025",
+      facilityAmount: "108750.00",
+      term: "15 Monthly", // Options: "12 Weekly", "6 Monthly", "24 Biweekly"
+      dueDate: "28.07.2025",
+      contractStatus: "Active", // Options: "Active", "Settled", "Defaulted", "Rescheduled", "Closed"
+      rental: "7,250.00 Monthly", // Format: "Amount Frequency"
+      agreedAmount: "0",
+      arrearsAge: "-0.01", // Negative = no arrears or advance
+      dueDate2: "28.07.2025"
+    },
+  
+    group2: {
+      lastPaymentDate: "05.10.2024",
+      lastPaidAmount: "0",
+      totalArrears: "-8.33", // Negative = overpayment
+      paidRentals: "0",
+      dueRentals: "15",
+      totalOutstanding: "108750",
+      defaultInterest: "0", // Could also be percentage or fixed amount
+      paidRentalAmount: "0"
+    },
+  
+    group3: {
+      settlementAmount: "108750",
+      futureCapital: "10000",
+      futureInterest: "3540",
+      closingDate: "05.11.2024",
+      paidCapital: "0",
+      paidInterest: "0",
+      facilityAmount2: "50000", // For backward compatibility
+      capitalAmount: "50000",
+      totalInterest: "13500"
+    }
+  });
+
+  // Transaction history with useState to be able to update it
+  const [transactions, setTransactions] = useState([
+    {
+      receiptNo: "JEREN000100",
+      date: "05.10.2024",
+      amount: "5300",
+      type: "PAYMENT",
+      capital: "3000",
+      interest: "1200",
+      arrears: "0",
+      officer: "lasantha"
+    },
+    {
+      receiptNo: "",
+      date: "05.10.2024",
+      amount: "5291",
+      type: "DUE RENTAL (10)",
+      capital: "3001",
+      interest: "1200",
+      arrears: "0",
+      officer: ""
+    }
+  ]);
+
+  // Helper function to parse numbers with commas or decimals
+  const parseAmount = (value) => {
+    if (!value) return 0;
+    // Remove commas and convert to number
+    return parseFloat(value.toString().replace(/,/g, ''));
+  };
 
   // Handle comment submission
   const handleAddComment = () => {
@@ -49,91 +150,148 @@ export default function InstallmentPage() {
     setNewComment("");
   };
 
-  // Personal Information from Excel
-  const personalInfo = {
-    name: "Mr. Shalitha Madhuwantha",
-    nic: "200278900987",
-    gender: "Male",
-    civilStatus: "Single", 
-    dob: "01.05.2002",
-    address: "No.2000/1, Green Land, JeEla",
-    mobile: "776065780",
-    product: "MBL",
-    productType: "BizCash",
-    location: "JaEla",
-    marketingOfficer: ""
+  // Helper function to extract rental amount from string like "7,250.00 Monthly"
+  const getRentalAmount = (rentalString) => {
+    if (!rentalString) return 0;
+    const amountPart = rentalString.split(" ")[0];
+    return parseAmount(amountPart);
   };
 
-  // Facility Details from Excel - grouped as they appear in Excel
-  const facilityGroup1 = {
-    contractNo: "JEMBL0000500",
-    contractDate: "01.10.2024",
-    facilityAmount: "50000",
-    term: "12 Weekly",
-    dueDate: "05.10.2024",
-    contractStatus: "Active",
-    rental: "5291 Weekly",
-    agreedAmount: "0",
-    arrearsAge: "-0.01",
-    dueDate2: "05.10.2024"
-  };
-  
-  const facilityGroup2 = {
-    lastPaymentDate: "05.10.2024",
-    lastPaidAmount: "5300",
-    totalArrears: "-8.33",
-    paidRentals: "10",
-    dueRentals: "2",
-    totalOutstanding: "13540",
-    defaultInterest: "0",
-    paidRentalAmount: "51460"
-  };
-  
-  const facilityGroup3 = {
-    settlementAmount: "13540",
-    futureCapital: "10000",
-    futureInterest: "3540",
-    closingDate: "05.11.2024",
-    paidCapital: "0",
-    paidInterest: "0",
-    facilityAmount2: "50000",
-    capitalAmount: "50000",
-    totalInterest: "13500"
-  };
-
-  // Transaction Details from Excel
-  const transactions = [
-    {
-      receiptNo: "JEREN000100",
-      location: "JE",
-      date: "05.10.2024",
-      rentalPaidAmount: "5300",
+  // Handle payment submission
+  const handlePaymentSubmit = (paymentData) => {
+    if (!paymentData) {
+      setIsPaymentModalOpen(false);
+      return;
+    }
+    
+    console.log("Payment processed:", paymentData);
+    
+    // Format date for consistency
+    const paymentDateFormatted = format(new Date(paymentData.paymentDate), "dd.MM.yyyy");
+    
+    // Generate new receipt number
+    const newReceiptNo = `JEREN${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    // Calculate capital and interest split (60%/40% for this example)
+    const capitalAmount = parseFloat(paymentData.amount) * 0.6;
+    const interestAmount = parseFloat(paymentData.amount) * 0.4;
+    
+    // Create receipt data
+    const newReceiptData = {
+      receiptNo: newReceiptNo,
+      payerName: personalInfo.name,
+      date: paymentDateFormatted,
+      amount: paymentData.amount,
+      rentalNo: facilityData.group1.contractNo,
+      capital: capitalAmount,
+      interest: interestAmount,
+      arrears: paymentData.arrearsAmount,
+      officerName: "Current User"
+    };
+    
+    // Update the transactions list with the new payment
+    const newTransaction = {
+      receiptNo: newReceiptNo,
+      date: paymentDateFormatted,
+      amount: paymentData.amount.toString(),
       type: "PAYMENT",
       description: "Receipt",
-      di: "0",
-      capitalAmount: "3000",
-      interestAmount: "1200",
-      arrears: "0",
-      age: "0",
-      settlement: "13540",
-      proceedBy: "lasantha"
-    },
-    {
-      receiptNo: "",
-      location: "JE",
-      date: "05.10.2024",
-      rentalPaidAmount: "5291",
-      type: "DUE RENTAL (10)",
-      description: "",
-      di: "0",
-      capitalAmount: "3001",
-      interestAmount: "1200",
-      arrears: "0",
-      age: "0",
-      settlement: "",
-      proceedBy: ""
+      capital: capitalAmount.toFixed(0).toString(),
+      interest: interestAmount.toFixed(0).toString(),
+      arrears: paymentData.arrearsAmount.toString(),
+      officer: "Current User"
+    };
+    
+    // Update transaction state
+    setTransactions([newTransaction, ...transactions]);
+    
+    // Parse all values properly before calculations
+    const facilityAmount = parseAmount(facilityData.group1.facilityAmount);
+    const currentOutstanding = parseAmount(facilityData.group2.totalOutstanding) || parseAmount(facilityData.group3.settlementAmount);
+    const currentArrears = Math.max(0, parseAmount(facilityData.group2.totalArrears));
+    const paymentAmount = parseFloat(paymentData.amount);
+    const currentPaidAmount = parseAmount(facilityData.group2.paidRentalAmount);
+    
+    // Apply payment first to arrears, then to outstanding balance
+    let remainingPayment = paymentAmount;
+    let newArrearsAmount = currentArrears;
+    
+    // First, apply payment to arrears if there are any
+    if (currentArrears > 0) {
+      if (remainingPayment >= currentArrears) {
+        // Payment covers all arrears
+        remainingPayment -= currentArrears;
+        newArrearsAmount = 0;
+      } else {
+        // Payment only covers part of arrears
+        newArrearsAmount = currentArrears - remainingPayment;
+        remainingPayment = 0;
+      }
     }
-  ];
+    
+    // Apply any remaining payment to outstanding balance
+    const newOutstanding = Math.max(0, currentOutstanding - remainingPayment);
+    const newPaidAmount = (currentPaidAmount + paymentAmount);
+    
+    // Calculate how many full rentals have been paid
+    const rentalAmount = getRentalAmount(facilityData.group1.rental);
+    const newPaidRentals = Math.floor(newPaidAmount / rentalAmount);
+    const totalRentals = parseInt(facilityData.group2.dueRentals) + parseInt(facilityData.group2.paidRentals);
+    const newDueRentals = Math.max(0, totalRentals - newPaidRentals);
+    
+    // Update facility data with accurate values
+    setFacilityData({
+      ...facilityData,
+      group1: {
+        ...facilityData.group1,
+        // Update contractStatus if fully paid
+        contractStatus: newOutstanding <= 0 ? "Settled" : 
+                       (newArrearsAmount > 0 ? "Arrears" : "Active")
+      },
+      group2: {
+        ...facilityData.group2,
+        lastPaymentDate: paymentDateFormatted,
+        lastPaidAmount: paymentData.amount.toString(),
+        totalOutstanding: newOutstanding.toFixed(2),
+        totalArrears: newArrearsAmount.toFixed(2),
+        paidRentalAmount: newPaidAmount.toFixed(2),
+        paidRentals: newPaidRentals.toString(),
+        dueRentals: newDueRentals.toString(),
+      },
+      group3: {
+        ...facilityData.group3,
+        settlementAmount: newOutstanding.toFixed(2),
+        paidCapital: (parseAmount(facilityData.group3.paidCapital) + capitalAmount).toFixed(2),
+        paidInterest: (parseAmount(facilityData.group3.paidInterest) + interestAmount).toFixed(2)
+      }
+    });
+    
+    // Show receipt
+    setReceiptData(newReceiptData);
+    setShowReceipt(true);
+    
+    // Close payment modal
+    setIsPaymentModalOpen(false);
+  };
+
+  // Handle opening the payment modal
+  const handleOpenPaymentModal = () => {
+    setIsPaymentModalOpen(true);
+  };
+
+  // Handle statement generation
+  const handleGenerateStatement = () => {
+    console.log("Generating statement...");
+    // Implementation for generating statement would go here
+  };
+
+  // Extract frequency from the term
+  const getPaymentFrequency = () => {
+    const termLower = facilityData.group1.term.toLowerCase();
+    if (termLower.includes('daily')) return "daily";
+    if (termLower.includes('weekly')) return "weekly";
+    return "monthly";
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen p-4">      
@@ -186,7 +344,25 @@ export default function InstallmentPage() {
         </div>
       </Card>
       
-      {/* Facility Details - Three Horizontal Cards with reduced height */}
+      {/* Loan Summary Dashboard */}
+      <div className="mb-4">
+        <LoanSummaryDashboard
+          facilityAmount={parseAmount(facilityData.group1.facilityAmount)}
+          paidAmount={parseAmount(facilityData.group2.paidRentalAmount)}
+          outstandingBalance={parseAmount(facilityData.group2.totalOutstanding)}
+          arrears={Math.max(0, parseAmount(facilityData.group2.totalArrears))}
+          dueRentals={parseInt(facilityData.group2.dueRentals)}
+          paidRentals={parseInt(facilityData.group2.paidRentals)}
+          interest={parseAmount(facilityData.group3.totalInterest)}
+          capital={parseAmount(facilityData.group3.capitalAmount)}
+          contractStatus={facilityData.group1.contractStatus}
+          lastPaymentDate={facilityData.group2.lastPaymentDate}
+          nextDueDate={facilityData.group1.dueDate}
+          contractNumber={facilityData.group1.contractNo}
+        />
+      </div>
+      
+      {/* Facility Details - Three Horizontal Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* Card 1 */}
         <Card className="overflow-hidden shadow-lg">
@@ -198,43 +374,43 @@ export default function InstallmentPage() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <span className="text-xs text-gray-500">Contract No</span>
-                <p className="font-medium">{facilityGroup1.contractNo}</p>
+                <p className="font-medium">{facilityData.group1.contractNo}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Contract Date</span>
-                <p className="font-medium">{facilityGroup1.contractDate}</p>
+                <p className="font-medium">{facilityData.group1.contractDate}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Facility Amount</span>
-                <p className="font-medium">LKR {facilityGroup1.facilityAmount}</p>
+                <p className="font-medium">LKR {facilityData.group1.facilityAmount}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Term</span>
-                <p className="font-medium">{facilityGroup1.term}</p>
+                <p className="font-medium">{facilityData.group1.term}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Due Date</span>
-                <p className="font-medium">{facilityGroup1.dueDate}</p>
+                <p className="font-medium">{facilityData.group1.dueDate}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Contract Status</span>
-                <p className="font-medium text-green-600 bg-green-100 px-1 rounded">{facilityGroup1.contractStatus}</p>
+                <p className="font-medium text-green-600 bg-green-100 px-1 rounded">{facilityData.group1.contractStatus}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Rental</span>
-                <p className="font-medium">LKR {facilityGroup1.rental}</p>
+                <p className="font-medium">LKR {facilityData.group1.rental}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Agreed Amount</span>
-                <p className="font-medium">LKR {facilityGroup1.agreedAmount}</p>
+                <p className="font-medium">LKR {facilityData.group1.agreedAmount}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Arrears Age</span>
-                <p className="font-medium">{facilityGroup1.arrearsAge}</p>
+                <p className="font-medium">{facilityData.group1.arrearsAge}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Due Date</span>
-                <p className="font-medium">{facilityGroup1.dueDate2}</p>
+                <p className="font-medium">{facilityData.group1.dueDate2}</p>
               </div>
             </div>
           </div>
@@ -250,48 +426,51 @@ export default function InstallmentPage() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <span className="text-xs text-gray-500">Last Payment Date</span>
-                <p className="font-medium">{facilityGroup2.lastPaymentDate}</p>
+                <p className="font-medium">{facilityData.group2.lastPaymentDate}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Last Paid Amount</span>
-                <p className="font-medium bg-yellow-100 px-1 rounded">LKR {facilityGroup2.lastPaidAmount}</p>
+                <p className="font-medium bg-yellow-100 px-1 rounded">LKR {facilityData.group2.lastPaidAmount}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Total Arrears</span>
-                <p className="font-medium">LKR {facilityGroup2.totalArrears}</p>
+                <p className="font-medium">LKR {facilityData.group2.totalArrears}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Paid Rentals</span>
-                <p className="font-medium bg-blue-100 px-1 rounded">{facilityGroup2.paidRentals}</p>
+                <p className="font-medium bg-blue-100 px-1 rounded">{facilityData.group2.paidRentals}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Due Rentals</span>
-                <p className="font-medium bg-blue-100 px-1 rounded">{facilityGroup2.dueRentals}</p>
+                <p className="font-medium bg-blue-100 px-1 rounded">{facilityData.group2.dueRentals}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Total Outstanding</span>
-                <p className="font-medium text-red-600 bg-red-100 px-1 rounded">LKR {facilityGroup2.totalOutstanding}</p>
+                <p className="font-medium text-red-600 bg-red-100 px-1 rounded">LKR {facilityData.group2.totalOutstanding}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Default Interest</span>
-                <p className="font-medium">LKR {facilityGroup2.defaultInterest}</p>
+                <p className="font-medium">LKR {facilityData.group2.defaultInterest}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Paid Rental Amount</span>
-                <p className="font-medium">LKR {facilityGroup2.paidRentalAmount}</p>
+                <p className="font-medium">LKR {facilityData.group2.paidRentalAmount}</p>
               </div>
             </div>
             
             {/* Make Payment Button */}
             <div className="mt-3 flex justify-end">
-              <button className="text-sm px-3 py-1 rounded text-white font-medium bg-gradient-to-r from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 transition-all shadow-md">
+              <button 
+                onClick={handleOpenPaymentModal}
+                className="text-sm px-3 py-1 rounded text-white font-medium bg-gradient-to-r from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 transition-all shadow-md"
+              >
                 Make Payment
               </button>
             </div>
           </div>
         </Card>
         
-        {/* Card 3 */}
+        {/* Card 3 - Settlement Details */}
         <Card className="overflow-hidden shadow-lg">
           <div className="p-2 border-b border-gray-200 bg-gray-700">
             <h2 className="text-sm text-gray-100">Settlement Details</h2>
@@ -301,42 +480,52 @@ export default function InstallmentPage() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
                 <span className="text-xs text-gray-500">Settlement Amount</span>
-                <p className="font-medium bg-red-100 px-1 rounded">LKR {facilityGroup3.settlementAmount}</p>
+                <p className="font-medium bg-red-100 px-1 rounded">LKR {facilityData.group3.settlementAmount}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Future Capital</span>
-                <p className="font-medium bg-purple-100 px-1 rounded">LKR {facilityGroup3.futureCapital}</p>
+                <p className="font-medium bg-purple-100 px-1 rounded">LKR {facilityData.group3.futureCapital}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Future Interest</span>
-                <p className="font-medium bg-purple-100 px-1 rounded">LKR {facilityGroup3.futureInterest}</p>
+                <p className="font-medium bg-purple-100 px-1 rounded">LKR {facilityData.group3.futureInterest}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Closing Date</span>
-                <p className="font-medium">{facilityGroup3.closingDate}</p>
+                <p className="font-medium">{facilityData.group3.closingDate}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Paid Capital</span>
-                <p className="font-medium">LKR {facilityGroup3.paidCapital}</p>
+                <p className="font-medium">LKR {facilityData.group3.paidCapital}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Paid Interest</span>
-                <p className="font-medium">LKR {facilityGroup3.paidInterest}</p>
+                <p className="font-medium">LKR {facilityData.group3.paidInterest}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Capital Amount</span>
-                <p className="font-medium">LKR {facilityGroup3.capitalAmount}</p>
+                <p className="font-medium">LKR {facilityData.group3.capitalAmount}</p>
               </div>
               <div>
                 <span className="text-xs text-gray-500">Total Interest</span>
-                <p className="font-medium">LKR {facilityGroup3.totalInterest}</p>
+                <p className="font-medium">LKR {facilityData.group3.totalInterest}</p>
               </div>
             </div>
           </div>
         </Card>
       </div>
       
-      {/* Tabs for Transaction, Comments, Evaluation, etc. as shown in Excel */}
+      {/* Arrears Calculation Component */}
+      <div className="mb-4">
+        <ArrearsCalculation 
+          frequency={getPaymentFrequency()}
+          startDate={facilityData.group1.contractDate}
+          dueAmount={getRentalAmount(facilityData.group1.rental)}
+          lastPaidDate={facilityData.group2.lastPaymentDate}
+        />
+      </div>
+      
+      {/* Tabs for Transaction, Comments, Evaluation, etc. */}
       <Tabs defaultValue="transaction" className="mb-4">
         <TabsList className="bg-white shadow rounded-md border border-gray-200">
           <TabsTrigger 
@@ -384,59 +573,11 @@ export default function InstallmentPage() {
         </TabsList>
         
         <TabsContent value="transaction">
-          {/* Transaction Details Card - Without black header bar */}
-          <Card className="overflow-hidden shadow-lg">            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Receipt No</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">DI</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Capital</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Interest</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Arrears</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Age</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Settlement</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Proceed By</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {transactions.map((transaction, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.receiptNo || "-"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.location}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.date}</td>
-                      <td className={`px-3 py-2 whitespace-nowrap text-sm ${index === 0 ? "bg-yellow-100" : ""}`}>
-                        LKR {transaction.rentalPaidAmount}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.type}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.description || "-"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.di}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">LKR {transaction.capitalAmount}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">LKR {transaction.interestAmount}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.arrears}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.age}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                        {transaction.settlement ? `LKR ${transaction.settlement}` : "-"}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.proceedBy || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <div className="p-3 flex justify-end">
-              <button className="text-sm px-3 py-1 rounded text-white font-medium bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-800 transition-all shadow-md">
-                Generate Statement
-              </button>
-            </div>
-          </Card>
+          <TransactionHistoryTable 
+            transactions={transactions} 
+            onGenerateStatement={handleGenerateStatement}
+            showGenerateStatement={true}
+          />
         </TabsContent>
         
         <TabsContent value="comments">
@@ -512,11 +653,37 @@ export default function InstallmentPage() {
         
         <TabsContent value="receipting">
           <Card className="p-4">
-            <h3 className="font-medium mb-2">Receipting</h3>
-            <p className="text-gray-500 text-sm">No receipting data available.</p>
+            {showReceipt && receiptData ? (
+              <ReceiptGenerator
+                receiptNo={receiptData.receiptNo}
+                payerName={receiptData.payerName}
+                date={receiptData.date}
+                amount={receiptData.amount}
+                rentalNo={receiptData.rentalNo}
+                capital={receiptData.capital}
+                interest={receiptData.interest}
+                arrears={receiptData.arrears}
+                officerName={receiptData.officerName}
+              />
+            ) : (
+              <>
+                <h3 className="font-medium mb-2">Receipting</h3>
+                <p className="text-gray-500 text-sm">No active receipt. Make a payment to generate a receipt.</p>
+              </>
+            )}
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Payment Modal */}
+      <PaymentPopupCard
+        open={isPaymentModalOpen}
+        onClose={handlePaymentSubmit}
+        rentalAmount={getRentalAmount(facilityData.group1.rental)}
+        arrearsAmount={Math.max(0, parseAmount(facilityData.group2.totalArrears))}
+        contractNo={facilityData.group1.contractNo}
+        borrowerName={personalInfo.name}
+      />
     </div>
   );
 }
