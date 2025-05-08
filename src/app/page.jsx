@@ -1,13 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-
 import { CreditCard, Users, DollarSign, Calendar } from "lucide-react";
-
-
 import Topnav from "@/components/Navbar/TopNav";
 
 export default function LoanManagement() {
+  const [greeting, setGreeting] = useState("");
+  const [timeEmojis, setTimeEmojis] = useState([]);
+  const [userName, setUserName] = useState("");
+  const [motivationalPhrase, setMotivationalPhrase] = useState("");
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUserName(userData.username || "User");
+    }
+
+    // Set greeting based on time of day with fun emojis including a face emoji
+    const hours = new Date().getHours();
+    
+    if (hours >= 5 && hours < 12) {
+      setGreeting("Good Morning");
+      // Morning emojis: sunrise, coffee, happy face
+      setTimeEmojis(["🌅", "☕", "😊"]);
+      setMotivationalPhrase("Let's make today productive!");
+    } else if (hours >= 12 && hours < 17) {
+      setGreeting("Good Afternoon");
+      // Afternoon emojis: sun, rocket, determined face
+      setTimeEmojis(["☀️", "🚀", "😎"]);
+      setMotivationalPhrase("Keep up the momentum!");
+    } else if (hours >= 17 && hours < 20) {
+      setGreeting("Good Evening");
+      // Evening emojis: sunset, tea, thinking face
+      setTimeEmojis(["🌆", "🍵", "😃"]);
+      setMotivationalPhrase("Final push before you wrap up!");
+    } else {
+      setGreeting("Good Night");
+      // Night emojis: moon, sparkles, tired but proud face
+      setTimeEmojis(["🌙", "✨", "😌"]);
+      setMotivationalPhrase("Planning tomorrow's success?");
+    }
+  }, []);
+
   const loanStats = [
     {
       title: "Active Loans",
@@ -83,12 +119,14 @@ export default function LoanManagement() {
         {/* top nav here */}
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-              Dashboard
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+              {greeting}, {userName} {timeEmojis.map((emoji, index) => (
+                <span key={index} className="ml-1">{emoji}</span>
+              ))}
             </h1>
-            <p className="text-sm text-gray-500">
-              Welcome back, John. Here's your loan portfolio overview.
+            <p className="text-base text-gray-600 mt-2 font-medium">
+              {motivationalPhrase} Here's your loan portfolio overview.
             </p>
           </div>
 

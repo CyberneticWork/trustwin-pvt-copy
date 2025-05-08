@@ -10,7 +10,8 @@ import {
   Phone,
   UserCheck,
   ChevronDown,
-  IdCard
+  IdCard,
+  Smartphone
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,33 +19,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input"; // Import Input for search functionality
-import jwt from "jsonwebtoken";
+import { Input } from "@/components/ui/input";
 
 function getOfficerIdFromToken() {
   if (typeof window === 'undefined') return null;
   const token = window.localStorage.getItem('user');
-// console.log('====================================');
-// console.log(token);
-// console.log('====================================');
-//   if (!token) return null;
-//   try {
-//     // JWT is base64 encoded: header.payload.signature
-//     const payload = token.split('.')[1];
-//     const decoded = JSON.parse(atob(payload));
-    // Officer ID might be in a field like `id` or `userId`
-    console.log(JSON.parse(token)["id"]);
-    return {name:JSON.parse(token)["roll"] , id:JSON.parse(token)["id"]};
+  console.log(JSON.parse(token)["id"]);
+  return {name:JSON.parse(token)["roll"], id:JSON.parse(token)["id"]};
 }
 
 function convertClnToSingleId(clnId) {
-  // Extract the numeric part of the CLN ID
   return clnId.startsWith("CLN-") ? parseInt(clnId.split("-")[1], 10) : null;
 }
 
 async function fetchCustomerById(clid) {
   try {
-    const singleId = convertClnToSingleId(clid); // Convert CLN-based ID to single ID
+    const singleId = convertClnToSingleId(clid);
     if (!singleId) throw new Error('Invalid CLN ID format');
     const res = await fetch(`/api/customer/searchbyid?clid=${encodeURIComponent(singleId)}`);
     if (!res.ok) throw new Error('Failed to fetch');
@@ -58,7 +48,6 @@ async function fetchCustomerById(clid) {
 
 function encodeBase64(loginId, chooseId, customerId) {
   const data = `login=${loginId},choose=${chooseId},customer=${customerId}`;
-  // Replace special characters to ensure proper Base64 encoding
   const encodedData = btoa(encodeURIComponent(data).replace(/%([0-9A-F]{2})/g,
     function(match, p1) {
       return String.fromCharCode('0x' + p1);
@@ -69,7 +58,6 @@ function encodeBase64(loginId, chooseId, customerId) {
 export default function Home() {
   const router = useRouter();
   const params = useParams();
-  console.log(params);
   
   const clidParam = params?.clid;
   const [selectedOfficer, setSelectedOfficer] = useState("Select CRO Officer");
@@ -84,7 +72,7 @@ export default function Home() {
   const [loadingClient, setLoadingClient] = useState(false);
   const [clientError, setClientError] = useState("");
   const [croOfficers, setCroOfficers] = useState([]);
-  const [croSearch, setCroSearch] = useState(""); // State for search input
+  const [croSearch, setCroSearch] = useState("");
 
   const financialProducts = [
     {
@@ -100,6 +88,13 @@ export default function Home() {
       icon: BarChart3,
       color: "bg-green-500",
       path: '/loans/auto-loan'
+    },
+    {
+      title: "Equipment Loan",
+      description: "Finance smartphones, laptops, and other business equipment.",
+      icon: Smartphone,
+      color: "bg-purple-500",
+      path: '/loans/equipment-loan'
     }
   ];
 
@@ -123,9 +118,9 @@ export default function Home() {
 
   // Fetch officer ID from JWT on mount
   useEffect(() => {
-    const officerData = getOfficerIdFromToken(); // Fetch the officer data (name and ID)
+    const officerData = getOfficerIdFromToken();
     if (officerData) {
-      setOfficerName(officerData.name); // Set the officer's name
+      setOfficerName(officerData.name);
     }
   }, []);
 
@@ -134,7 +129,7 @@ export default function Home() {
     if (clidParam) {
       (async () => {
         setLoadingClient(true);
-        const customer = await fetchCustomerById(clidParam); // Pass CLN-based ID
+        const customer = await fetchCustomerById(clidParam);
         if (customer) {
           setClientInfo({
             name: customer.fullname,
@@ -152,7 +147,7 @@ export default function Home() {
   const handleClientSearch = async () => {
     setLoadingClient(true);
     setClientError("");
-    const customer = await fetchCustomerById(clientIdInput.trim()); // Pass CLN-based ID
+    const customer = await fetchCustomerById(clientIdInput.trim());
     if (customer) {
       setClientInfo({
         name: customer.fullname,
@@ -167,20 +162,20 @@ export default function Home() {
   };
 
   const handleEncodeData = () => {
-    const officerData = getOfficerIdFromToken(); // Fetch the officer data (name and ID)
+    const officerData = getOfficerIdFromToken();
     if (!officerData || !officerData.id) {
       alert("Failed to retrieve admin ID. Please log in again.");
-      return null; // Return null if there's an issue
+      return null;
     }
 
-    const loginId = officerData.id; // Get the logged-in admin ID
+    const loginId = officerData.id;
     const chooseId =
-      croOfficers.find((officer) => officer.name === selectedOfficer)?.id || loginId; // Default to loginId if no CRO officer is selected
-    const customerId = clientInfo.id; // Customer ID
+      croOfficers.find((officer) => officer.name === selectedOfficer)?.id || loginId;
+    const customerId = clientInfo.id;
 
     if (!customerId) {
       alert("Customer ID is missing.");
-      return null; // Return null if customer ID is missing
+      return null;
     }
 
     try {
@@ -286,17 +281,15 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {financialProducts.map((product, index) => (
               <Card
                 key={index}
                 className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => {
-                  const encodedData = handleEncodeData(); // Invoke handleEncodeData
+                  const encodedData = handleEncodeData();
                   if (encodedData) {
-                    router.push(`${product.path}/${encodedData}`); // Use the encoded data in the route
+                    router.push(`${product.path}/${encodedData}`);
                   }
                 }}
               >
@@ -322,7 +315,8 @@ export default function Home() {
   );
 }
 
-export function BusinessLoan() {
+// Equipment Loan Component
+export function EquipmentLoan() {
   const [selectedOfficer, setSelectedOfficer] = useState("Select CRO Officer");
   const [officerName, setOfficerName] = useState(null);
   
@@ -342,7 +336,10 @@ export function BusinessLoan() {
 
   // Fetch officer name from JWT on mount
   useEffect(() => {
-    setOfficerName(getOfficerIdFromToken()[name]); // Use getOfficerIdFromToken to fetch the logged-in officer's ID
+    const officerData = getOfficerIdFromToken();
+    if (officerData) {
+      setOfficerName(officerData.name);
+    }
   }, []);
 
   return (
@@ -352,19 +349,19 @@ export function BusinessLoan() {
           {/* Client Information Card */}
           <Card className="w-full mb-6 overflow-hidden">
             <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-1"></div>
+              <div className="bg-gradient-to-r from-purple-500 to-purple-700 p-1"></div>
               <div className="flex flex-col md:flex-row justify-between p-4">
                 <div className="space-y-3">
                   <div className="flex items-center">
-                    <Building2 className="w-5 h-5 text-blue-500 mr-2" />
+                    <Building2 className="w-5 h-5 text-purple-500 mr-2" />
                     <div>
                       <p className="text-xs text-gray-500">Client Name</p>
-                      <p className="font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded-md">{clientInfo.name}</p>
+                      <p className="font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded-md">{clientInfo.name}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center">
-                    <UserCheck className="w-5 h-5 text-blue-500 mr-2" />
+                    <UserCheck className="w-5 h-5 text-purple-500 mr-2" />
                     <div>
                       <p className="text-xs text-gray-500">Client ID</p>
                       <p className="font-medium">{clientInfo.id}</p>
@@ -372,7 +369,7 @@ export function BusinessLoan() {
                   </div>
                   
                   <div className="flex items-center">
-                    <Phone className="w-5 h-5 text-blue-500 mr-2" />
+                    <Phone className="w-5 h-5 text-purple-500 mr-2" />
                     <div>
                       <p className="text-xs text-gray-500">Telephone</p>
                       <p className="font-medium">{clientInfo.telephone}</p>
@@ -383,7 +380,7 @@ export function BusinessLoan() {
                 <div className="mt-4 md:mt-0 md:ml-6 flex flex-col justify-center">
                   <p className="text-sm text-gray-500 mb-2">Account Manager</p>
                   {officerName && (
-                    <span className="text-blue-700 font-semibold bg-blue-50 px-3 py-1 rounded-md border border-blue-100 mb-2">
+                    <span className="text-purple-700 font-semibold bg-purple-50 px-3 py-1 rounded-md border border-purple-100 mb-2">
                       Logged in as: {officerName}
                     </span>
                   )}
@@ -411,138 +408,24 @@ export function BusinessLoan() {
           </Card>
           
           <div className="mb-6 flex items-center">
-            <div className="p-3 rounded-full bg-blue-500 text-white shadow-md mr-4">
-              <Building2 className="w-6 h-6" />
+            <div className="p-3 rounded-full bg-purple-500 text-white shadow-md mr-4">
+              <Smartphone className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-                Business Loan
+                Equipment Loan
               </h1>
               <p className="text-sm text-gray-500">
-                Our business loans provide you with the necessary funds to expand and grow.
+                Finance smartphones, laptops, and other business equipment with competitive rates.
               </p>
             </div>
           </div>
           
           <div className="bg-white rounded-lg shadow p-6">
             <p className="text-gray-700 mb-4">
-              Flexible repayment options available tailored to your business cash flow.
+              Quickly upgrade your business technology with flexible financing options and quick approval.
             </p>
-            <Button>Apply Now</Button>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-export function HighDraft() {
-  const [selectedOfficer, setSelectedOfficer] = useState("Select CRO Officer");
-  const [officerName, setOfficerName] = useState(null);
-  
-  const [clientInfo, setClientInfo] = useState({
-    name: "Acme Corporation",
-    id: "ACME-2025-0042",
-    telephone: "+1 (555) 123-4567"
-  });
-
-  const croOfficers = [
-    "Sarah Johnson",
-    "Michael Chen",
-    "Emma Rodriguez",
-    "David Kim",
-    "Lisa Patel"
-  ];
-
-  // Fetch officer name from JWT on mount
-  useEffect(() => {
-    setOfficerName(getOfficerIdFromToken()); // Use getOfficerIdFromToken to fetch the logged-in officer's ID
-  }, []);
-
-  return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          {/* Client Information Card */}
-          <Card className="w-full mb-6 overflow-hidden">
-            <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-green-500 to-green-700 p-1"></div>
-              <div className="flex flex-col md:flex-row justify-between p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <Building2 className="w-5 h-5 text-green-500 mr-2" />
-                    <div>
-                      <p className="text-xs text-gray-500">Client Name</p>
-                      <p className="font-medium text-green-700 bg-green-50 px-2 py-1 rounded-md">{clientInfo.name}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <UserCheck className="w-5 h-5 text-green-500 mr-2" />
-                    <div>
-                      <p className="text-xs text-gray-500">Client ID</p>
-                      <p className="font-medium">{clientInfo.id}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <Phone className="w-5 h-5 text-green-500 mr-2" />
-                    <div>
-                      <p className="text-xs text-gray-500">Telephone</p>
-                      <p className="font-medium">{clientInfo.telephone}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-4 md:mt-0 md:ml-6 flex flex-col justify-center">
-                  <p className="text-sm text-gray-500 mb-2">Account Manager</p>
-                  {officerName && (
-                    <span className="text-green-700 font-semibold bg-green-50 px-3 py-1 rounded-md border border-green-100 mb-2">
-                      Logged in as: {officerName}
-                    </span>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full md:w-60 flex justify-between items-center">
-                        <span>{selectedOfficer}</span>
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-full md:w-60">
-                      {croOfficers.map((officer, index) => (
-                        <DropdownMenuItem 
-                          key={index}
-                          onClick={() => setSelectedOfficer(officer)}
-                        >
-                          {officer}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="mb-6 flex items-center">
-            <div className="p-3 rounded-full bg-green-500 text-white shadow-md mr-4">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-                High Draft (Leasing)
-              </h1>
-              <p className="text-sm text-gray-500">
-                Get the best leasing solutions tailored for your business needs.
-              </p>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-700 mb-4">
-              Affordable rates and easy approval process designed for quick business financing.
-            </p>
-            <Button>Apply Now</Button>
+            <Button className="bg-purple-600 hover:bg-purple-700">Apply Now</Button>
           </div>
         </main>
       </div>

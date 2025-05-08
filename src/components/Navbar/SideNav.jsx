@@ -20,8 +20,9 @@ import {
   UserCog,
   ShieldUser,
   BriefcaseBusiness,
-SendHorizontal,
-  BookUser
+  SendHorizontal,
+  BookUser,
+  ChevronLeft
 } from "lucide-react";
 
 const icons = {
@@ -43,14 +44,25 @@ const icons = {
 };
 
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 import ACL from "@/lib/jsons/ACL.json";
 
 // Function to determine active nav based on current path
 const getActiveNavFromPath = (path) => {
-  // Check if path matches any route in ACL
-  const aclItem = ACL.find(item => path === item.route || path.startsWith(item.route));
-  return aclItem ? aclItem.route : null;
+  // First check for exact route match
+  const exactMatch = ACL.find(item => path === item.route);
+  if (exactMatch) return exactMatch.route;
+  
+  // Then check submenu items
+  for (const item of ACL) {
+    if (item.submenu) {
+      const submenuMatch = item.submenu.find(subitem => path === subitem.route);
+      if (submenuMatch) return submenuMatch.route;
+    }
+  }
+  
+  // Check if path starts with any route
+  const startsWith = ACL.find(item => path.startsWith(item.route) && item.route !== '/');
+  return startsWith ? startsWith.route : null;
 };
 
 // Function to get ACL ID from route
@@ -59,13 +71,24 @@ const getACLIdFromRoute = (route) => {
   return aclItem ? aclItem.id : null;
 };
 
+// Function to find parent route of a submenu item
+const getParentRoute = (route) => {
+  for (const item of ACL) {
+    if (item.submenu) {
+      const isChild = item.submenu.some(subitem => subitem.route === route);
+      if (isChild) return item.route;
+    }
+  }
+  return null;
+};
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || '{}') : {};
   
   const [activeNav, setActiveNav] = useState(getActiveNavFromPath(pathname));
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [userPermissions, setUserPermissions] = useState([]);
   const [filteredACL, setFilteredACL] = useState(ACL);
@@ -89,12 +112,10 @@ export default function Sidebar() {
         }
 
         const aclData = await aclResponse.json();
-        console.log("ACL response:", aclData);
 
         if (aclData.code === 'SUCCESS') {
           const permissions = aclData.data.permissions;
-          console.log("Permissions:", permissions);
-
+          
           // Filter ACL based on permissions
           const filteredACL = ACL.filter(item => {
             // Always show dashboard
@@ -117,7 +138,6 @@ export default function Sidebar() {
             }
             return item;
           });
-          console.log("Filtered ACL:", filteredACL);
 
           // Update the ACL array with only allowed routes
           setFilteredACL(filteredACL);
@@ -131,18 +151,32 @@ export default function Sidebar() {
       }
     };
 
-    fetchPermissions();
+    if (user.id) {
+      fetchPermissions();
+    }
   }, [user.id]);
 
-  // Update active nav when pathname changes
+  // Auto-expand parent menu when submenu item is active
   useEffect(() => {
-    setActiveNav(getActiveNavFromPath(pathname));
+    const currentRoute = getActiveNavFromPath(pathname);
+    const parentRoute = getParentRoute(currentRoute);
+    
+    if (parentRoute) {
+      setExpandedSubmenus(prev => {
+        const newSet = new Set(prev);
+        newSet.add(parentRoute);
+        return newSet;
+      });
+    }
+    
+    setActiveNav(currentRoute);
   }, [pathname]);
   
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (sidebarOpen && 
+          window.innerWidth < 1024 &&
           !document.querySelector('.sidebar')?.contains(e.target) && 
           !document.querySelector('.mobile-toggle')?.contains(e.target)) {
         setSidebarOpen(false);
@@ -174,7 +208,7 @@ export default function Sidebar() {
     alert("Logging out...");
   };
 
-  // Toggle sidebar collapse on desktop
+  // Toggle sidebar collapse
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
   };
@@ -202,11 +236,11 @@ export default function Sidebar() {
 
   // Handle navigation
   const handleNavigation = (route) => {
-    console.log("Navigating to:", route);
-  
     setActiveNav(route);
     router.push(route);
-    setSidebarOpen(false); // Close sidebar on mobile after navigation
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false); // Close sidebar on mobile after navigation
+    }
   };
 
   // Get user initials for avatar
@@ -217,54 +251,57 @@ export default function Sidebar() {
     return 'U';
   };
 
-  // Generate random gradient for user avatar if no profile picture
-  const getAvatarGradient = () => {
-    const gradients = [
-      'from-violet-500 to-fuchsia-500',
-      'from-cyan-500 to-blue-500',
-      'from-emerald-500 to-teal-500',
-      'from-rose-400 to-red-500',
-      'from-amber-500 to-orange-500'
-    ];
-    
-    // Use user ID or email to determine consistent gradient
-    const userIdentifier = user.id || user.email || '0';
-    const index = parseInt(userIdentifier.toString().slice(-1)) % gradients.length;
-    return gradients[index];
+  // Check if a submenu item is active
+  const isSubmenuItemActive = (route) => {
+    // Check if current active nav is in this submenu
+    return activeNav === route;
+  };
+
+  // Check if any submenu item under a parent is active
+  const hasActiveChild = (parentItem) => {
+    if (!parentItem.submenu) return false;
+    return parentItem.submenu.some(subitem => isSubmenuItemActive(subitem.route));
   };
 
   return (
     <>
-      {/* Mobile Header Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-lg z-30 px-4 flex items-center justify-between">
+      {/* Mobile Header Bar - Slate Theme */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-800 shadow-lg z-30 px-4 flex items-center justify-between">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
-            className="p-2 rounded-full mobile-toggle text-white hover:bg-white/20"
+            className="p-2 rounded-full mobile-toggle text-slate-300 hover:bg-white/5"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             <Menu className="w-6 h-6" />
           </Button>
           <div className="ml-3">
-            <img src="/images/logo.png" alt="Logo" className="h-8" />
+            {/* Mobile logo in a white square */}
+            <div className="bg-white rounded-md p-0 w-10 h-10 flex items-center justify-center overflow-hidden shadow-[0_4px_8px_rgba(0,0,0,0.15)]">
+              <img 
+                src="/images/logo.png" 
+                alt="Logo" 
+                className="w-[140%] h-[140%] object-contain"
+              />
+            </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" className="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/20"
+          <Button variant="ghost" className="w-10 h-10 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/5"
                  onClick={() => handleNavigation("search")}>
             <Search className="w-5 h-5" />
           </Button>
           <div className="relative">
-            <Button variant="ghost" className="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/20"
+            <Button variant="ghost" className="w-10 h-10 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/5"
                    onClick={() => handleNavigation("notifications")}>
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </Button>
           </div>
-          <Button variant="ghost" className="p-1 rounded-full flex items-center justify-center hover:bg-white/20"
+          <Button variant="ghost" className="p-1 rounded-full flex items-center justify-center hover:bg-white/5"
                  onClick={() => handleNavigation("profile")}>
-            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center text-white font-medium`}>
+            <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white font-medium">
               {getUserInitials()}
             </div>
           </Button>
@@ -272,195 +309,174 @@ export default function Sidebar() {
       </div>
       
       {/* Dark Overlay for Mobile */}
-      <AnimatePresence>
-        {sidebarOpen && window.innerWidth < 1024 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {sidebarOpen && window.innerWidth < 1024 && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     
-      {/* Enhanced Sidebar with animations and scrollbar */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div 
-            initial={{ x: -300 }}
-            animate={{ x: 0 }}
-            exit={{ x: -300 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`sidebar fixed lg:static ${collapsed ? 'w-20' : 'w-20 sm:w-24 md:w-72'} bg-white dark:bg-gray-900 shadow-2xl z-30 flex flex-col
-                       transition-all duration-300 ease-in-out pt-6 lg:pt-0 mt-16 lg:mt-0 rounded-r-xl lg:rounded-none`}
-          >
-            {/* Desktop Logo Area - Hidden on Mobile */}
-            <div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-              <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
-                <div className="rounded-xl">
-                  <img src="/images/logo.png" alt="Logo" className={collapsed ? "h-10 w-10" : "h-10"} />
-                </div>
-                {!collapsed && <span className="ml-3 text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Dashboard</span>}
-              </div>
-              
-              {!collapsed && (
-                <Button 
-                  variant="ghost" 
-                  className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-                  onClick={toggleCollapse}
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                </Button>
-              )}
-            </div>
-            
-            {/* Collapse button when sidebar is collapsed */}
-            {collapsed && (
-              <div className="hidden lg:flex justify-center mt-4 flex-shrink-0">
-                <Button 
-                  variant="ghost" 
-                  className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-                  onClick={toggleCollapse}
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400 rotate-180" />
-                </Button>
-              </div>
-            )}
-            
-            {/* User Profile - Mobile Only */}
-            <div className="lg:hidden flex flex-col items-center py-6 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center text-white text-xl font-medium shadow-lg`}>
-                {getUserInitials()}
-              </div>
-              <p className="mt-3 font-medium dark:text-white">{user.name || 'User Name'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{user.email || 'user@example.com'}</p>
-              <div className="mt-3 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-full text-xs font-medium text-purple-700 dark:text-purple-300">
-                Admin
-              </div>
-            </div>
-            
-            {/* Scrollable content wrapper */}
-            <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent min-h-0">
-              <div className="px-3">
-                {!collapsed && (
-                  <p className="px-4 text-xs text-gray-400 dark:text-gray-500 uppercase font-semibold tracking-wider mb-4">Main Menu</p>
-                )}
-
-                {/* Render ACL routes dynamically */}
-                {filteredACL.map((item) => {
-                  const route = item.route;
-                  const Icon = icons[item.icon];
-                  
-                  return (
-                    <div key={route} className="mb-2">
-                      <NavItem 
-                        icon={<Icon className="w-5 h-5" />}
-                        label={item.name} 
-                        isActive={activeNav === route || pathname.startsWith(route)}
-                        onClick={() => {
-                          if (item.submenu) {
-                            // Toggle submenu
-                            setExpandedSubmenus(prev => {
-                              const newSet = new Set(prev);
-                              if (newSet.has(route)) {
-                                newSet.delete(route);
-                              } else {
-                                newSet.add(route);
-                              }
-                              return newSet;
-                            });
-                          } else {
-                            handleNavigation(route);
-                          }
-                        }}
-                        collapsed={collapsed}
-                        hasSubmenu={!!item.submenu}
-                        isExpanded={expandedSubmenus.has(route)}
-                      />
-                      
-                      {item.submenu && expandedSubmenus.has(route) && !collapsed && (
-                        <div className="ml-6 pl-5 mt-1 mb-3 border-l-2 border-purple-200 dark:border-purple-900/40 flex flex-col gap-1">
-                          {item.submenu.map((subitem) => {
-                            const Icon = icons[subitem.icon];
-                            
-                            return (
-                              <NavItem 
-                                key={subitem.route}
-                                icon={<Icon className="w-4 h-4" />}
-                                label={subitem.name}
-                                isActive={activeNav === subitem.route}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleNavigation(subitem.route);
-                                }}
-                                collapsed={collapsed}
-                                isSubmenu={true}
-                              />
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Settings Section */}
-                {!collapsed && (
-                  <p className="px-4 text-xs text-gray-400 dark:text-gray-500 uppercase font-semibold tracking-wider mt-8 mb-4">Settings</p>
-                )}
-
-                {collapsed && <div className="mt-6"></div>}
-
-                {/* Always show Settings */}
-                <NavItem 
-                  icon={<Settings className="w-5 h-5" />} 
-                  label="Settings" 
-                  isActive={activeNav === "settings"}
-                  onClick={() => handleNavigation("settings")}
-                  collapsed={collapsed}
+      {/* Slate Edge Design Sidebar */}
+      {sidebarOpen && (
+        <div 
+          className={`sidebar fixed lg:static ${collapsed ? 'w-20' : 'w-20 sm:w-24 md:w-72'} bg-slate-800 shadow-lg z-30 flex flex-col
+                     transition-all duration-300 ease-in-out pt-6 lg:pt-0 mt-16 lg:mt-0 h-full
+                     border-r-2 border-slate-700`}
+        >
+          {/* Desktop Logo Area with White Square - Hidden on Mobile */}
+          <div className={`hidden lg:flex items-center ${collapsed ? 'justify-center' : 'justify-center'} px-4 py-6 border-b border-slate-700 flex-shrink-0`}>
+            {!collapsed && (
+              <div className="bg-white rounded-md p-0 w-36 h-36 flex items-center justify-center overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_20px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-1">
+                <img 
+                  src="/images/logo.png" 
+                  alt="Logo" 
+                  className="w-[140%] h-[140%] object-contain"
                 />
               </div>
-            </div>
-            
-            {/* User profile summary at bottom - Desktop Only */}
-            {!collapsed && (
-              <div className="hidden lg:flex items-center px-4 py-3 border-t border-b border-gray-100 dark:border-gray-800">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarGradient()} flex items-center justify-center text-white font-medium shadow-md`}>
-                  {getUserInitials()}
-                </div>
-                <div className="ml-3 min-w-0">
-                  <p className="text-sm font-medium dark:text-white truncate">{user.name || 'User Name'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email || 'user@example.com'}</p>
-                </div>
+            )}
+            {collapsed && (
+              <div className="bg-white rounded-md p-0 w-14 h-14 flex items-center justify-center overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_20px_rgba(0,0,0,0.25)] transition-all duration-300 hover:-translate-y-1">
+                <img 
+                  src="/images/logo.png" 
+                  alt="Logo" 
+                  className="w-[140%] h-[140%] object-contain"
+                />
               </div>
             )}
-            
-            {/* Logout Button - Fixed at bottom */}
-            <div className="px-3 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-              <Button 
-                variant="ghost" 
-                className={`w-full rounded-lg h-11 px-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 text-red-500 transition-all group`}
-                onClick={handleLogout}
-              >
-                <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-                  <LogOut className="w-5 h-5" />
-                  {!collapsed && <span className="hidden md:block ml-3 font-semibold">Logout</span>}
-                </div>
-                {!collapsed && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
-              </Button>
+          </div>
+          
+          {/* Collapse/Expand button */}
+          <div className="hidden lg:flex justify-center mt-4 flex-shrink-0">
+            <Button 
+              variant="ghost" 
+              className="p-1.5 rounded-full text-slate-300 transition-transform duration-300 hover:-translate-y-1 hover:bg-white/5"
+              onClick={toggleCollapse}
+            >
+              {collapsed ? (
+                <ChevronRight className="w-5 h-5" />
+              ) : (
+                <ChevronLeft className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
+          
+          {/* User Profile - Mobile Only */}
+          <div className="lg:hidden flex flex-col items-center py-6 border-b border-slate-700 flex-shrink-0">
+            <div className="w-16 h-16 rounded-full bg-slate-600 flex items-center justify-center text-white text-xl font-medium shadow-lg">
+              {getUserInitials()}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="mt-3 px-3 py-1 bg-slate-700 rounded-full text-xs font-medium text-slate-300">
+              Admin
+            </div>
+          </div>
+          
+          {/* Scrollable content wrapper */}
+          <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent min-h-0">
+            <div className="px-3">
+              {!collapsed && (
+                <p className="px-4 text-xs text-slate-400 uppercase font-semibold tracking-wider mb-4 mt-4">Main Menu</p>
+              )}
+
+              {/* Render ACL routes dynamically */}
+              {filteredACL.map((item) => {
+                const route = item.route;
+                const Icon = icons[item.icon];
+                const isParentActive = activeNav === route;
+                const hasActiveSubmenuChild = hasActiveChild(item);
+                
+                return (
+                  <div key={route} className="mb-2">
+                    <NavItem 
+                      icon={<Icon className="w-5 h-5" />}
+                      label={item.name} 
+                      isActive={isParentActive || hasActiveSubmenuChild}
+                      onClick={() => {
+                        if (item.submenu) {
+                          // Toggle submenu
+                          setExpandedSubmenus(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(route)) {
+                              newSet.delete(route);
+                            } else {
+                              newSet.add(route);
+                            }
+                            return newSet;
+                          });
+                        } else {
+                          handleNavigation(route);
+                        }
+                      }}
+                      collapsed={collapsed}
+                      hasSubmenu={!!item.submenu}
+                      isExpanded={expandedSubmenus.has(route)}
+                    />
+                    
+                    {item.submenu && expandedSubmenus.has(route) && !collapsed && (
+                      <div className="ml-6 pl-5 mt-1 mb-3 border-l-2 border-slate-700 flex flex-col gap-1">
+                        {item.submenu.map((subitem) => {
+                          const Icon = icons[subitem.icon];
+                          const isSubItemActive = isSubmenuItemActive(subitem.route);
+                          
+                          return (
+                            <NavItem 
+                              key={subitem.route}
+                              icon={<Icon className="w-4 h-4" />}
+                              label={subitem.name}
+                              isActive={isSubItemActive}
+                              onClick={() => handleNavigation(subitem.route)}
+                              collapsed={collapsed}
+                              isSubmenu={true}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Settings Section */}
+              {!collapsed && (
+                <p className="px-4 text-xs text-slate-400 uppercase font-semibold tracking-wider mt-8 mb-4">Settings</p>
+              )}
+
+              {collapsed && <div className="mt-6"></div>}
+
+              {/* Always show Settings */}
+              <NavItem 
+                icon={<Settings className="w-5 h-5" />} 
+                label="Settings" 
+                isActive={activeNav === "settings"}
+                onClick={() => handleNavigation("settings")}
+                collapsed={collapsed}
+              />
+            </div>
+          </div>
+          
+          {/* Logout Button - Fixed at bottom */}
+          <div className="px-3 py-4 border-t border-slate-700 flex-shrink-0">
+            <Button 
+              variant="ghost" 
+              className={`w-full h-11 px-4 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center text-red-300 transition-transform group hover:-translate-y-1 duration-300 hover:bg-white/5`}
+              onClick={handleLogout}
+            >
+              <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
+                <LogOut className="w-5 h-5" />
+                {!collapsed && <span className="hidden md:block ml-3 font-semibold">Logout</span>}
+              </div>
+              {!collapsed && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
+            </Button>
+          </div>
+        </div>
+      )}
       
-      {/* Toggle button for collapsed sidebar on desktop */}
+      {/* Toggle button when sidebar is closed */}
       {!sidebarOpen && (
         <div className="hidden lg:block fixed left-0 top-1/2 -translate-y-1/2 z-20">
           <Button 
             variant="default"
             size="sm" 
-            className="rounded-r-lg rounded-l-none h-12 w-6 bg-gradient-to-b from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg"
+            className="h-12 w-6 bg-slate-600 shadow-lg hover:-translate-x-1 transition-transform duration-300 hover:bg-slate-600"
             onClick={() => setSidebarOpen(true)}
           >
             <ChevronRight className="w-4 h-4 text-white" />
@@ -471,7 +487,7 @@ export default function Sidebar() {
   );
 }
 
-// Enhanced NavItem component with animations and badges
+// NavItem component - Slate theme with light blue accents and hover animation
 function NavItem({ 
   icon, 
   label, 
@@ -485,32 +501,30 @@ function NavItem({
   isSubmenu = false
 }) {
   const badgeColorClasses = {
-    blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300",
-    green: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-300",
-    red: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300",
-    purple: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300",
-    orange: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300",
+    amber: "bg-amber-900/30 text-amber-300",
+    blue: "bg-blue-900/30 text-blue-300",
+    emerald: "bg-emerald-900/30 text-emerald-300",
+    purple: "bg-purple-900/30 text-purple-300",
+    indigo: "bg-indigo-900/30 text-indigo-300",
   };
   
-  const activeGradient = isSubmenu 
-    ? "bg-gradient-to-r from-fuchsia-50 to-purple-50 dark:from-fuchsia-900/10 dark:to-purple-900/10 text-fuchsia-600 dark:text-fuchsia-300"
-    : "bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/10 dark:to-purple-900/10 text-indigo-600 dark:text-indigo-300";
+  // Updated to keep text light on hover
+  const activeStyle = isActive 
+    ? "bg-blue-800/10 text-blue-300 font-medium"
+    : "hover:bg-white/5 text-slate-300 hover:text-slate-200";
     
   return (
     <Button 
       variant="ghost" 
-      className={`w-full ${isSubmenu ? 'rounded-md h-9 text-sm' : 'rounded-lg h-11'} px-3 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center mb-1 transition-all
-      ${isActive 
-        ? activeGradient
-        : "hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 text-gray-700 dark:text-gray-300"
-      } group relative`}
+      className={`w-full ${isSubmenu ? 'h-9 text-sm' : 'h-11'} px-3 flex ${collapsed ? 'justify-center' : 'justify-between'} items-center mb-1 
+      ${activeStyle} group hover:-translate-y-0.5 transition-transform duration-300 ease-in-out`}
       onClick={onClick}
     >
       <div className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
-        <div className={`${isActive ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'}`}>
+        <div className={`${isActive ? 'text-blue-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
           {icon}
         </div>
-        {!collapsed && <span className={`hidden md:block ml-3 font-medium ${isSubmenu ? 'text-sm' : ''}`}>{label}</span>}
+        {!collapsed && <span className={`hidden md:block ml-3 ${isSubmenu ? 'text-sm' : ''}`}>{label}</span>}
       </div>
       
       {!collapsed && (
@@ -521,31 +535,22 @@ function NavItem({
             </span>
           )}
           {hasSubmenu && (
-            <ChevronRight className={`w-4 h-4 transition-all ${
+            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${
               isExpanded 
-                ? "rotate-90 text-purple-500 dark:text-purple-400" 
-                : "rotate-0 text-gray-400 dark:text-gray-500"
+                ? "rotate-90 text-slate-200" 
+                : "text-slate-400 group-hover:text-slate-200"
             }`} />
           )}
         </div>
       )}
       
-      {/* Active indicator */}
-      {isActive && (
-        <motion.div 
-          layoutId="activeIndicator"
-          className={`absolute ${isSubmenu ? 'left-0 top-1 h-7 w-1' : 'left-0 top-2 h-7 w-1'} bg-gradient-to-b from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-500 rounded-r-full`}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
-      
       {/* Show badge as a dot when collapsed */}
       {collapsed && badge && (
         <div className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-          badgeColor === "blue" ? "bg-blue-500" :
-          badgeColor === "green" ? "bg-green-500" : 
-          badgeColor === "purple" ? "bg-purple-500" :
-          badgeColor === "orange" ? "bg-orange-500" : "bg-red-500"
+          badgeColor === "amber" ? "bg-amber-400" : 
+          badgeColor === "purple" ? "bg-purple-400" :
+          badgeColor === "emerald" ? "bg-emerald-400" :
+          badgeColor === "indigo" ? "bg-indigo-400" : "bg-blue-400"
         }`}></div>
       )}
     </Button>
