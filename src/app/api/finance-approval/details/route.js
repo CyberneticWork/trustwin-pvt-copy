@@ -23,6 +23,7 @@ export async function GET(req) {
       let loanDetails = null;
       let customerDetails = null;
       let additionalDetails = null;
+      let bankDetails = null;
       
       // Fetch loan and customer data based on loan type
       if (loanType === 'A') {
@@ -49,6 +50,16 @@ export async function GET(req) {
         
         if (customerResult.length > 0) {
           customerDetails = customerResult[0];
+          
+          // Get bank details
+          const [bankResult] = await connection.execute(
+            `SELECT * FROM bankdetails WHERE customerid = ? AND loandid = ?`,
+            [customerDetails.id, id]
+          );
+          
+          if (bankResult.length > 0) {
+            bankDetails = bankResult[0];
+          }
         }
         
         // Get vehicle details if available
@@ -86,6 +97,16 @@ export async function GET(req) {
         
         if (customerResult.length > 0) {
           customerDetails = customerResult[0];
+          
+          // Get bank details
+          const [bankResult] = await connection.execute(
+            `SELECT * FROM bankdetails WHERE customerid = ? AND loandid = ?`,
+            [customerDetails.id, id]
+          );
+          
+          if (bankResult.length > 0) {
+            bankDetails = bankResult[0];
+          }
         }
         
         // Get business details if available
@@ -110,6 +131,66 @@ export async function GET(req) {
           additionalDetails = {
             ...additionalDetails,
             financialDetails: financialResult[0]
+          };
+        }
+      } else if (loanType === 'E') {
+        // Equipment loan
+        const [loanResult] = await connection.execute(
+          `SELECT * FROM equipment_loan_applications WHERE id = ?`,
+          [id]
+        );
+        
+        if (loanResult.length === 0) {
+          return new Response(
+            JSON.stringify({ error: "Equipment loan not found" }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        loanDetails = loanResult[0];
+        
+        // Get customer details
+        const [customerResult] = await connection.execute(
+          `SELECT * FROM customer WHERE id = ?`,
+          [loanDetails.customer_id]
+        );
+        
+        if (customerResult.length > 0) {
+          customerDetails = customerResult[0];
+          
+          // Get bank details
+          const [bankResult] = await connection.execute(
+            `SELECT * FROM bankdetails WHERE customerid = ? AND loandid = ?`,
+            [customerDetails.id, id]
+          );
+          
+          if (bankResult.length > 0) {
+            bankDetails = bankResult[0];
+          }
+        }
+        
+        // Get equipment details if available
+        const [equipmentResult] = await connection.execute(
+          `SELECT * FROM equipment_details WHERE loanid = ?`,
+          [id]
+        );
+        
+        if (equipmentResult.length > 0) {
+          additionalDetails = {
+            equipmentDetails: equipmentResult[0]
+          };
+        }
+        
+        // Get supplier details if available
+        const [supplierResult] = await connection.execute(
+          `SELECT * FROM equipment_supplier_details WHERE loanid = ?`,
+          [id]
+        );
+        
+        if (supplierResult.length > 0) {
+          additionalDetails = {
+            ...additionalDetails,
+            supplierDetails: supplierResult[0]
           };
         }
       } else {
@@ -137,6 +218,12 @@ export async function GET(req) {
             ds: customerDetails.ds,
             district: customerDetails.district,
             province: customerDetails.province
+          } : null,
+          bank: bankDetails ? {
+            acctype: bankDetails.acctype,
+            bank: bankDetails.bank,
+            acno: bankDetails.acno,
+            branch: bankDetails.branch
           } : null,
           additionalDetails
         }

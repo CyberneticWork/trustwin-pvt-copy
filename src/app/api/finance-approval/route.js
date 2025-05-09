@@ -7,7 +7,7 @@ export async function GET() {
     const connection = await connectDB();
 
     try {
-      // Get loan data where status is "fund waiting"
+      // Get auto loan data with flexible status matching
       const [autoLoanResults] = await connection.execute(`
         SELECT 
           a.id,
@@ -21,7 +21,9 @@ export async function GET() {
         FROM auto_loan_applications a
         JOIN customer c ON a.customer_id = c.id
         LEFT JOIN employees e ON a.CROid = e.id
-        WHERE a.status = 'fund waiting'
+        WHERE LOWER(TRIM(a.status)) = 'fund waiting' OR 
+              a.status = 'pending' OR
+              a.status = 'active'
         ORDER BY a.created_at DESC
       `);
 
@@ -38,8 +40,29 @@ export async function GET() {
         FROM loan_bussiness b
         JOIN customer c ON b.customerid = c.id
         LEFT JOIN employees e ON b.CROid = e.id
-        WHERE b.status = 'fund waiting'
+        WHERE b.status = 'fund waiting' OR 
+              b.status = 'active'
         ORDER BY b.addat DESC
+      `);
+
+      // Get equipment loans with flexible status matching
+      const [equipmentLoanResults] = await connection.execute(`
+        SELECT 
+          e.id,
+          c.fullname as customerName,
+          e.contractid,
+          em.name as croName,
+          e.loan_amount as revenueAmount,
+          e.status,
+          'Equipment Loan' as loanType,
+          DATE_FORMAT(e.created_at, '%b %d, %Y') as applicationDate
+        FROM equipment_loan_applications e
+        JOIN customer c ON e.customer_id = c.id
+        LEFT JOIN employees em ON e.CROid = em.id
+        WHERE LOWER(TRIM(e.status)) = 'fund waiting' OR 
+              e.status = 'pending' OR
+              e.status = 'active'
+        ORDER BY e.created_at DESC
       `);
 
       // Format auto loans
@@ -49,7 +72,7 @@ export async function GET() {
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: "Waiting for Funds",
+        status: loan.status === 'active' ? "Approved" : "Waiting for Funds",
         loanType: "Auto Loan",
         applicationDate: loan.applicationDate
       }));
@@ -61,13 +84,25 @@ export async function GET() {
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: "Waiting for Funds",
+        status: loan.status === 'active' ? "Approved" : "Waiting for Funds",
         loanType: loan.loanType === "daily" ? "Business (Daily)" : "Business (Monthly)",
         applicationDate: loan.applicationDate
       }));
 
+      // Format equipment loans
+      const formattedEquipmentLoans = equipmentLoanResults.map(loan => ({
+        id: `E-${loan.id}`,
+        customerName: loan.customerName,
+        contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
+        croName: loan.croName || "Unassigned",
+        revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
+        status: loan.status === 'active' ? "Approved" : "Waiting for Funds",
+        loanType: "Equipment Loan",
+        applicationDate: loan.applicationDate
+      }));
+
       // Combine all loan types
-      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans];
+      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans, ...formattedEquipmentLoans];
       
       // Sort by most recent date
       allLoans.sort((a, b) => {

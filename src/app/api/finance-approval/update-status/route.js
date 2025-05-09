@@ -20,7 +20,7 @@ export async function POST(req) {
       );
     }
 
-    const loanType = loanId.charAt(0); // 'A' for auto loans, 'B' for business loans
+    const loanType = loanId.charAt(0); // 'A' for auto loans, 'B' for business loans, 'E' for equipment loans
     const id = loanId.substring(2); // Extract the numeric ID
     const status = action === "approve" ? "active" : "rejected";
 
@@ -30,8 +30,9 @@ export async function POST(req) {
       await connection.beginTransaction();
 
       let contractId = null;
-      let transferType = loanType === "A" ? "Auto Loan" : "Business Loan";
+      let transferType = "";
 
+      // Handle different loan types
       if (loanType === "A") {
         const [loanResult] = await connection.execute(
           `SELECT contractid FROM auto_loan_applications WHERE id = ?`,
@@ -43,6 +44,8 @@ export async function POST(req) {
         }
 
         contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
+        transferType = "Auto Loan";
+        
         await connection.execute(
           `UPDATE auto_loan_applications SET status = ?, comment = ? WHERE id = ?`,
           [status, comment || "", id]
@@ -58,9 +61,28 @@ export async function POST(req) {
         }
 
         contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
+        transferType = "Business Loan";
+        
         await connection.execute(
           `UPDATE loan_bussiness SET status = ? WHERE id = ?`,
           [status, id]
+        );
+      } else if (loanType === "E") {
+        const [loanResult] = await connection.execute(
+          `SELECT contractid FROM equipment_loan_applications WHERE id = ?`,
+          [id]
+        );
+
+        if (loanResult.length === 0) {
+          throw new Error("Equipment loan not found");
+        }
+
+        contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
+        transferType = "Equipment Loan";
+        
+        await connection.execute(
+          `UPDATE equipment_loan_applications SET status = ?, comment = ? WHERE id = ?`,
+          [status, comment || "", id]
         );
       } else {
         throw new Error("Invalid loan type");

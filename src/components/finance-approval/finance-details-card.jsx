@@ -130,6 +130,31 @@ export default function FinanceDetailsCard({ loan, onClose, onApprove, onReject,
             </div>
           )}
 
+          {/* Bank Details - Added section */}
+          {loan.details.bank && (
+            <div className="border rounded-md p-3 mb-3 space-y-2">
+              <h4 className="font-medium text-sm">Bank Details</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-500">Account Type</p>
+                  <p>{loan.details.bank.acctype}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Bank Name</p>
+                  <p>{loan.details.bank.bank}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Account Number</p>
+                  <p>{loan.details.bank.acno}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Branch</p>
+                  <p>{loan.details.bank.branch}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Loan Details */}
           {loan.details.loan && (
             <div className="border rounded-md p-3 mb-3 space-y-2">

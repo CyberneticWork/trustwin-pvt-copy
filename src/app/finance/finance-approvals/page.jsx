@@ -63,7 +63,22 @@ export default function FinanceApprovalPage() {
         const data = await response.json();
         
         if (data.success) {
-          setLoanRequests(data.data || []);
+          // Sort loans by status - "Waiting for Funds" first, then by date
+          const sortedLoans = [...(data.data || [])].sort((a, b) => {
+            if (a.status === "Waiting for Funds" && b.status !== "Waiting for Funds") {
+              return -1;
+            }
+            if (a.status !== "Waiting for Funds" && b.status === "Waiting for Funds") {
+              return 1;
+            }
+            
+            // If both have same status, sort by date (newest first)
+            const dateA = new Date(a.applicationDate);
+            const dateB = new Date(b.applicationDate);
+            return dateB - dateA;
+          });
+          
+          setLoanRequests(sortedLoans);
           
           // Fetch the statistics
           const statsResponse = await fetch('/api/finance-approval/statistics');
@@ -256,6 +271,17 @@ export default function FinanceApprovalPage() {
     setCurrentPage(1);
   };
 
+  // Function to get badge style based on status
+  const getBadgeStyle = (status) => {
+    if (status === "Waiting for Funds") {
+      return "bg-yellow-100 text-yellow-800";
+    } else if (status === "Approved") {
+      return "bg-green-100 text-green-800";
+    } else {
+      return "bg-blue-100 text-blue-800";
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -394,14 +420,17 @@ export default function FinanceApprovalPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentRecords.length > 0 ? (
                   currentRecords.map((loan) => (
-                    <tr key={loan.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={loan.id} 
+                      className={`hover:bg-gray-50 ${loan.status === 'Waiting for Funds' ? 'bg-yellow-50' : ''}`}
+                    >
                       <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 truncate">{loan.id}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.customerName}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.contractId || `CT-${4590 + parseInt(loan.id.substring(2))}`}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.croName}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.revenueAmount}</td>
                       <td className="px-3 py-3 whitespace-nowrap">
-                        <Badge className="bg-blue-100 text-blue-800">
+                        <Badge className={getBadgeStyle(loan.status)}>
                           {loan.status}
                         </Badge>
                       </td>
