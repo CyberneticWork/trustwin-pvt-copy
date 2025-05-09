@@ -1,108 +1,154 @@
-// app/api/loan/EQloan/employment/route.js
-import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
+import { connectDB } from "@/lib/db";
 
-export async function POST(request) {
-  let connection;
+export async function POST(req) {
+
   try {
-    const data = await request.json();
-    
-    // Validate required fields
-    if (!data.loanId || !data.customerId) {
-      return NextResponse.json(
-        { code: 'ERROR', message: 'Loan ID and customer ID are required' },
-        { status: 400 }
-      );
+    const { customerId, loanId, employmentData } = await req.json();
+    // console.log(customerId);
+
+    // Log the received data
+    // console.log('Received Data:', {
+    //   customerId,
+    //   loanId,
+    //   employmentData
+    // });
+
+    if (!customerId || !loanId || !employmentData) {
+      return Response.json({
+        code: "ERROR",
+        message: "Missing required fields"
+      }, { status: 400 });
     }
 
-    const employmentData = data.employmentData || {};
-    connection = await connectDB();
+    // Validate and set default employment type
+    const validTypes = ['employee', 'owner'];
+    // console.log(employmentData.businessRegistrationNumber);
+    console.log(employmentData);
+    
+    
+    const employmentType = validTypes.includes(employmentData.employmentType) 
+      ? employmentData.employmentType 
+      : 'employee'; // Default to employee if invalid
 
-    // Check if employment details already exist for this loan
-    const [existingRecords] = await connection.execute(
-      'SELECT id FROM equipment_loan_employment WHERE loandid = ?',
-      [data.loanId]
+    // Log the employment type
+    console.log('Employment Type:', employmentType);
+    console.log(employmentData.businessRegistrationNumber );
+
+    // Map fields based on employment type and convert empty strings to null
+    const fields = {
+      employment_type: employmentType,
+      number: employmentType === 'employee' 
+        ? (employmentData.companyRegistrationNumber || null) 
+        : (employmentData.businessRegistrationNumber || null),
+      address: employmentData.businessAddress || null,
+      nature_of_business: employmentType === 'employee' 
+        ? (employmentData.designation || null) 
+        : (employmentData.natureOfBusiness || null),
+      period: employmentType === 'employee' 
+        ? (employmentData.experienceYears || null) 
+        : (employmentData.businessPeriod || null),
+      name: employmentType === 'employee' 
+        ? (employmentData.companyName || null) 
+        : (employmentData.businessName || null),
+      type: employmentType === 'employee' 
+        ? (employmentData.businessType || null) 
+        : (employmentData.employmentTypeDetail || null),
+      bussnessregno: employmentType === 'employee' 
+        ? (employmentData.businessRegistrationNumber || null) 
+        : (employmentData.businessRegistrationNumber || null),
+      jobtitle: employmentType === 'employee' 
+        ? (employmentData.designation || null) 
+        : (employmentData.natureOfBusiness || null)
+    };
+
+    // Log the mapped fields
+    // console.log('Mapped Fields:', fields);
+
+    const connection = await connectDB();
+
+    // Check if employment details already exist for this customer and loan
+    const [existing] = await connection.execute(
+      `SELECT id FROM equipment_loan_employment 
+       WHERE customerid = ? AND loandid = ?`,
+      [customerId, loanId]
     );
 
-    let result;
-    if (existingRecords.length > 0) {
+    // console.log(fields);
+    if (existing.length > 0) {
+      // Log existing record details
+      // console.log('Existing Record:', existing[0]);
+
       // Update existing record
-      [result] = await connection.execute(
-        `UPDATE equipment_loan_employment SET 
-          employment_type = ?,
-          number = ?,
-          address = ?,
-          nature_of_business = ?,
-          period = ?,
-          name = ?,
-          type = ?,
-          bussnessregno = ?,
-          jobtitle = ?,
-          updated_at = NOW()
-        WHERE loandid = ?`,
+      const [updateResult] = await connection.execute(
+        `UPDATE equipment_loan_employment 
+         SET employment_type = ?, number = ?, address = ?, 
+             nature_of_business = ?, period = ?, name = ?, 
+             type = ?, bussnessregno = ?, jobtitle = ?
+         WHERE customerid = ? AND loandid = ?`,
         [
-          employmentData.employmentType || '',
-          employmentData.companyRegistrationNumber || employmentData.businessRegistrationNumber || '',
-          employmentData.businessAddress || '',
-          employmentData.natureOfBusiness || '',
-          employmentData.experienceYears || employmentData.businessPeriod || '',
-          employmentData.companyName || employmentData.businessName || '',
-          employmentData.businessType || '',
-          employmentData.businessRegistrationNumber || '',
-          employmentData.designation || employmentData.employmentTypeDetail || '',
-          data.loanId
+          fields.employment_type,
+          fields.number || null,
+          fields.address || null,
+          fields.nature_of_business || null,
+          fields.period || null,
+          fields.name || null,
+          fields.type || null,
+          fields.bussnessregno || null,
+          fields.jobtitle || null,
+          customerId,
+          loanId
         ]
       );
+
+      // console.log('Update Result:', updateResult);
+      if (updateResult.affectedRows === 0) {
+        return Response.json({
+          code: "ERROR",
+          message: "Failed to update employment details"
+        }, { status: 404 });
+      }
     } else {
       // Insert new record
-      [result] = await connection.execute(
-        `INSERT INTO equipment_loan_employment (
-          customerid, loandid, employment_type, number, address,
-          nature_of_business, period, name, type, bussnessregno, jobtitle
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      const [insertResult] = await connection.execute(
+        `INSERT INTO equipment_loan_employment 
+         (customerid, loandid, employment_type, number, address, 
+          nature_of_business, period, name, type, bussnessregno, jobtitle) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          data.customerId,
-          data.loanId,
-          employmentData.employmentType || '',
-          employmentData.companyRegistrationNumber || employmentData.businessRegistrationNumber || '',
-          employmentData.businessAddress || '',
-          employmentData.natureOfBusiness || '',
-          employmentData.experienceYears || employmentData.businessPeriod || '',
-          employmentData.companyName || employmentData.businessName || '',
-          employmentData.businessType || '',
-          employmentData.businessRegistrationNumber || '',
-          employmentData.designation || employmentData.employmentTypeDetail || ''
+          customerId,
+          loanId,
+          fields.employment_type,
+          fields.number || null,
+          fields.address || null,
+          fields.nature_of_business || null,
+          fields.period || null,
+          fields.name || null,
+          fields.type || null,
+          fields.bussnessregno || null,
+          fields.jobtitle || null
         ]
       );
+
+      // console.log('Insert Result:', insertResult);
     }
 
-    return NextResponse.json({
-      code: 'SUCCESS',
-      message: 'Employment details saved successfully',
-      data: { 
-        loanId: data.loanId,
-        customerId: data.customerId,
-        affectedRows: result.affectedRows
-      }
+    return Response.json({
+      code: "SUCCESS",
+      message: "Employment details saved successfully"
     });
 
   } catch (error) {
-    console.error('Error saving employment details:', error);
-    return NextResponse.json(
-      { 
-        code: 'ERROR', 
-        message: 'Failed to save employment details',
-        error: error.message 
-      },
-      { status: 500 }
-    );
-  } finally {
-    if (connection) {
-      try {
-        await connection.end();
-      } catch (e) {
-        console.error('Error closing database connection:', e);
-      }
-    }
+    console.error('Error in employment API:', {
+      error: error.message,
+      stack: error.stack,
+      customerId,
+      loanId,
+      employmentData,
+      fields
+    });
+    return Response.json({
+      code: "ERROR",
+      message: "Failed to save employment details"
+    }, { status: 500 });
   }
 }

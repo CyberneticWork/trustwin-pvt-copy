@@ -5,11 +5,11 @@ const UPLOAD_API_URL = 'http://127.0.0.1/api/upload.php';
 let response  = null;
 
 // Helper function to create FormData from file and metadata
-async function createFormData(file, loanId, type) {
+async function createFormData(file, loanId) {
   const formData = new FormData();
   formData.append('image', new Blob([await file.arrayBuffer()]), file.name);
   formData.append('loan_id', loanId);
-  formData.append('document_type', type);
+  // No document_type
   return formData;
 }
 
@@ -30,13 +30,12 @@ export async function POST(request) {
     console.log('Form data received:', formDataObj);
     
     const file = formData.get('file');
-    const type = formData.get('type');
     const customerId = formData.get('customerId');
     const loanId = formData.get('loanId');
     
-    console.log('Extracted values:', { file: file?.name, type, customerId, loanId });
+    console.log('Extracted values:', { file: file?.name, customerId, loanId });
     
-    if (!file || !type || !loanId) {
+    if (!file || !loanId) {
       return NextResponse.json(
         { code: 'ERROR', message: 'Missing required fields' },
         { status: 400 }
@@ -45,13 +44,12 @@ export async function POST(request) {
 
     try {
       // Create form data for the PHP API
-      const uploadFormData = await createFormData(file, loanId, type);
+      const uploadFormData = await createFormData(file, loanId);
       
       console.log('Sending request to PHP API:', {
         url: UPLOAD_API_URL,
         method: 'POST',
         file: file.name,
-        type,
         loanId,
         customerId
       });
@@ -93,7 +91,6 @@ export async function POST(request) {
         data: {
           url: result.url || '',  // Adjust based on your API response
           name: file.name,
-          type,
           size: file.size,
           uploadedAt: new Date().toISOString(),
           // Include any additional data from your PHP API

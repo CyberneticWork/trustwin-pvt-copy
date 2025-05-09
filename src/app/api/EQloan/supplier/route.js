@@ -1,98 +1,94 @@
-// app/api/loan/EQloan/supplier/route.js
-import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
+import { connectDB } from "@/lib/db";
 
-export async function POST(request) {
-  let connection;
+export async function POST(req) {
   try {
-    const data = await request.json();
-    
-    // Validate required fields
-    if (!data.loanId || !data.customerId) {
-      return NextResponse.json(
-        { code: 'ERROR', message: 'Loan ID and customer ID are required' },
-        { status: 400 }
-      );
+    const { customerId, loanId, supplierData } = await req.json();
+
+    if (!customerId || !loanId || !supplierData) {
+      return Response.json({
+        code: "ERROR",
+        message: "Missing required fields"
+      }, { status: 400 });
     }
 
-    const supplierData = data.supplierData || {};
-    connection = await connectDB();
+    console.log("Supplier data:", supplierData);
+
+    const connection = await connectDB();
 
     // Check if supplier details already exist for this loan
-    const [existingSupplier] = await connection.execute(
-      'SELECT id FROM equipment_supplier_details WHERE loanid = ?',
-      [data.loanId]
+    const [existing] = await connection.execute(
+      `SELECT id FROM supplier_details 
+       WHERE loanid = ?`,
+      [loanId]
     );
 
-    let result;
-    if (existingSupplier.length > 0) {
-      // Update existing supplier
-      [result] = await connection.execute(
-        `UPDATE equipment_supplier_details SET 
-          name = ?,
-          br_number = ?,
-          id_number = ?,
-          account_number = ?,
-          bank_name = ?,
-          branch_name = ?,
-          updated_at = NOW()
-        WHERE loanid = ?`,
+    if (existing.length > 0) {
+      // Update existing record
+      const [updateResult] = await connection.execute(
+        `UPDATE supplier_details 
+         SET name = ?, br_number = ?, id_number = ?, 
+             account_number = ?, bank_name = ?, branch_name = ?
+         WHERE loanid = ?`,
         [
-          supplierData.name || '',
-          supplierData.brNumber || '',
-          supplierData.idNumber || '',
-          supplierData.accountNumber || '',
-          supplierData.bankName || '',
-          supplierData.branchName || '',
-          data.loanId
+          supplierData.name,
+          supplierData.brNumber,
+          supplierData.idNumber,
+          supplierData.accountNumber,
+          supplierData.bankName,
+          supplierData.branchName,
+          loanId
         ]
       );
+
+      if (updateResult.affectedRows === 0) {
+        return Response.json({
+          code: "ERROR",
+          message: "Failed to update supplier details"
+        }, { status: 404 });
+      }
+
+      return Response.json({
+        code: "SUCCESS",
+        message: "Supplier details updated successfully"
+      });
     } else {
-      // Insert new supplier
-      [result] = await connection.execute(
-        `INSERT INTO equipment_supplier_details (
-          loanid, name, br_number, id_number, account_number,
-          bank_name, branch_name, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      // Insert new record
+      const [insertResult] = await connection.execute(
+        `INSERT INTO supplier_details (
+          id, loanid, name, br_number, id_number,
+          account_number, bank_name, branch_name
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          data.loanId,
-          supplierData.name || '',
-          supplierData.brNumber || '',
-          supplierData.idNumber || '',
-          supplierData.accountNumber || '',
-          supplierData.bankName || '',
-          supplierData.branchName || ''
+          supplierData.idNumber, // Using id_number as ID
+          loanId,
+          supplierData.name,
+          supplierData.brNumber,
+          supplierData.idNumber,
+          supplierData.accountNumber,
+          supplierData.bankName,
+          supplierData.branchName
         ]
       );
-    }
 
-    return NextResponse.json({
-      code: 'SUCCESS',
-      message: 'Supplier details saved successfully',
-      data: { 
-        loanId: data.loanId,
-        customerId: data.customerId,
-        affectedRows: result.affectedRows
+      if (insertResult.affectedRows === 0) {
+        return Response.json({
+          code: "ERROR",
+          message: "Failed to insert supplier details"
+        }, { status: 500 });
       }
-    });
 
+      return Response.json({
+        code: "SUCCESS",
+        message: "Supplier details saved successfully",
+        data: { id: supplierData.idNumber }
+      });
+    }
   } catch (error) {
-    console.error('Error saving supplier details:', error);
-    return NextResponse.json(
-      { 
-        code: 'ERROR', 
-        message: 'Failed to save supplier details',
-        error: error.message 
-      },
-      { status: 500 }
-    );
-  } finally {
-    if (connection) {
-      try {
-        await connection.end();
-      } catch (e) {
-        console.error('Error closing database connection:', e);
-      }
-    }
+    console.error("Error saving supplier details:", error);
+    return Response.json({
+      code: "ERROR",
+      message: "Internal server error",
+      error: error.message
+    }, { status: 500 });
   }
 }

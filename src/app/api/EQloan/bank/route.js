@@ -3,9 +3,12 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 
 export async function POST(request) {
+ 
+  
   let connection;
   try {
     const data = await request.json();
+    console.log(data);
     
     // Validate required fields
     if (!data.loanId || !data.customerId) {

@@ -18,7 +18,7 @@ export default function EquipmentLoanCalculatorPage() {
   // Function to handle loan application
   const handlePartialPayment = async (loanId, paymentNumber, partialAmount) => {
     try {
-      const response = await fetch('/api/loan/equipment/payment', {
+      const response = await fetch('/api/EQloan/payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,11 +52,31 @@ export default function EquipmentLoanCalculatorPage() {
       // Get parameters from the URL
       const hash = params.hash;
       
-      // Decode base64 hash
-      const decodedHash = atob(hash);
-      console.log(decodedHash);
-    const list = decodedHash.split(',');
-    console.log(list);
+      // Debug: show hash param
+      console.log("params.hash:", hash);
+      // Robust decode base64 hash from URL param
+      let base64 = decodeURIComponent(hash);
+      console.log("Base64 after decodeURIComponent:", base64);
+      base64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+      console.log("Base64 after replace and pad:", base64);
+      let decodedHash;
+      try {
+        decodedHash = atob(base64);
+      } catch (e) {
+        alert('Invalid or corrupted link. Please check your URL.');
+        console.error("atob error:", e, "base64:", base64);
+        return;
+      }
+      console.log("decodedHash:", decodedHash);
+      const list = decodedHash.split(',');
+      console.log("list after split:", list);
+      if (list.length < 3 || !list[0].includes('=') || !list[1].includes('=') || !list[2].includes('=')) {
+        alert('Decoded parameters are invalid. Please check your link.');
+        return;
+      }
       
       // Get customer ID from the URL parameter
       const customerId = list[2].split('=')[1];
@@ -107,9 +127,9 @@ export default function EquipmentLoanCalculatorPage() {
 
       // Show loading state
       document.body.style.cursor = 'wait';
-      
+      console.log(loanData);
       // Make API call to create loan application
-      const response = await fetch('/api/loan/equipment/apply', {
+      const response = await fetch('/api/EQloan/apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

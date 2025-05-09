@@ -16,11 +16,11 @@ import GuarantorDetailsStep from "@/components/applyforloan/GuarantorDetailsStep
 import SubmitStep from "@/components/applyforloan/SubmitStep";
 
 // Equipment loan specific components
-import EmploymentDetailsStep from "@/components/applyforauto/EmploymentDetailsStep"; // Reusing from auto loan
-import EquipmentDetailsStep from "@/components/applyforequipment/EquipmentDetailsStep"; // New component
-import EQSupplierDetailsStep from "@/components/applyforequipment/EQSupplierDetailsStep"; // New component
-import EQDocumentUploadStep from "@/components/applyforequipment/EQDocumentUploadStep"; // New component
-import EQSummaryStep from "@/components/applyforequipment/EQSummaryStep"; // New component
+import EmploymentDetailsStep from "@/components/applyforauto/EmploymentDetailsStep"; 
+import EquipmentDetailsStep from "@/components/applyforequipment/EquipmentDetailsStep";
+import EQSupplierDetailsStep from "@/components/applyforequipment/EQSupplierDetailsStep";
+import EQDocumentUploadStep from "@/components/applyforequipment/EQDocumentUploadStep"; 
+import EQSummaryStep from "@/components/applyforequipment/EQSummaryStep"; 
 
 export default function ApplyForEquipmentLoanPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -209,36 +209,46 @@ export default function ApplyForEquipmentLoanPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For now, we're just simulating the data loading
-    // Later, this will be replaced with actual API calls
-    const simulateDataLoading = () => {
-      setTimeout(() => {
-        setLoanData(prev => ({
-          ...prev,
-          customerId: "CUST123",
-          CusDisId: "CD12345",
-          customerName: "John Smith",
-          customerNic: "198712345678",
-          idNumber: "198712345678",
-          gender: "Male",
-          dateOfBirth: "1987-05-15",
-          address: {
-            line1: "123 Main Street",
-            line2: "Apt 4B",
-            line3: "",
-            city: "Colombo"
-          },
-          location: "Colombo",
-          gsDivision: "Colombo Central",
-          dsOffice: "Colombo",
-          district: "Colombo",
-          province: "Western"
-        }));
+    const fetchCustomerDetails = async () => {
+      try {
+        const response = await fetch(`/api/EQloan/details?id=${params.id}`);
+        console.log(response);
+        
+        const data = await response.json();
+        console.log(data);
+        
+        if (data.code === 'SUCCESS') {
+          const customerData = data.data.customer;
+          const loanDataFromApi = data.data.loan;
+          setLoanData(prev => ({
+            ...prev,
+            customerId: customerData.id,
+            CusDisId: customerData.CusDisId,
+            customerName: customerData.fullname,
+            customerNic: customerData.nic,
+            idNumber: customerData.nic,
+            gender: customerData.gender === 1 ? 'Male' : 'Female',
+            dateOfBirth: customerData.dob,
+            address: {
+              line1: customerData.address,
+              line2: '',
+              line3: '',
+              city: customerData.location
+            },
+            location: customerData.location,
+            gsDivision: customerData.gs,
+            dsOffice: customerData.ds,
+            district: customerData.district,
+            province: customerData.province
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching customer details:', error);
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
-
-    simulateDataLoading();
+    fetchCustomerDetails();
   }, [params.id]);
   
   // Define steps for Equipment Loan
@@ -272,19 +282,335 @@ export default function ApplyForEquipmentLoanPage() {
     }));
   };
 
-  const handleNext = () => {
-    // No validation for now - we're allowing free navigation
-    setCurrentStep(current => Math.min(steps.length - 1, current + 1));
+  const handleNext = async () => {
+    // Step-wise API integration, similar to auto loan flow
+    const currentStepId = steps[currentStep]?.id;
+    try {
+      if (currentStepId === 'personal') {
+        // Save personal details
+        const response = await fetch('/api/EQloan/update', {
+
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: params.id,
+            residenceType: loanData.residenceType,
+            utilityBillType: loanData.utilityBillType
+          })
+        });
+        const data = await response.json();
+        if (data.code === 'ERROR') {
+          alert(data.message);
+          return;
+        }
+      } else if (currentStepId === 'bank') {
+        // Save bank details
+        const response = await fetch('/api/EQloan/bank', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerId: loanData.customerId,
+            loanId: params.id,
+            bankData: {
+              acctype: loanData.accountType,
+              bank: loanData.bankName,
+              acno: loanData.accountNumber,
+              branch: loanData.branchName,
+              period: loanData.bankAccountPeriod,
+              month1: parseFloat(loanData.bankTurnover.month1) || 0,
+              month2: parseFloat(loanData.bankTurnover.month2) || 0,
+              month3: parseFloat(loanData.bankTurnover.month3) || 0
+            }
+          })
+        });
+        const data = await response.json();
+        if (data.code === 'ERROR') {
+          alert(data.message);
+          return;
+        }
+      } else if (currentStepId === 'employment') {
+        // Save employment details
+        console.log(loanData.customerId);
+
+        try {
+          console.log('Employment type:', loanData.employmentType);
+          const response = await fetch('/api/EQloan/employment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+
+            body: JSON.stringify({
+              customerId: loanData.customerId,
+              loanId: params.id,
+              employmentData: {
+                employmentType: loanData.employmentType,
+                companyRegistrationNumber: loanData.employmentType === 'employee' 
+                  ? loanData.companyRegistrationNumber 
+                  : null,
+                businessRegistrationNumber: loanData.employmentType === 'employee' 
+                  ? null 
+                  : loanData.businessRegistrationNo,
+                businessAddress: loanData.businessAddress,
+                designation: loanData.employmentType === 'employee' 
+                  ? loanData.designation 
+                  : null,
+                natureOfBusiness: loanData.employmentType === 'employee' 
+                  ? loanData.designation 
+                  : loanData.natureOfBusiness,
+                experienceYears: loanData.employmentType === 'employee' 
+                  ? loanData.experienceYears 
+                  : null,
+                businessPeriod: loanData.employmentType === 'employee' 
+                  ? null 
+                  : loanData.businessPeriod,
+                companyName: loanData.employmentType === 'employee' 
+                  ? loanData.companyName 
+                  : null,
+                businessName: loanData.employmentType === 'employee' 
+                  ? null 
+                  : loanData.businessName,
+                businessType: loanData.employmentType === 'employee' 
+                  ? loanData.businessType 
+                  : null,
+                employmentTypeDetail: loanData.employmentType === 'employee' 
+                  ? null 
+                  : loanData.employmentTypeDetail
+              }
+            })
+          });
+          console.log('Employment Data:', loanData.employmentData);
+
+          const data = await response.json();
+
+          if (data.code === 'ERROR') {
+            alert(data.message);
+            return;
+          }
+        } catch (error) {
+          console.error('Error saving employment details:', error);
+          alert('Failed to save employment details. Please try again.');
+          return;
+        }
+      } else if (currentStepId === 'financial') {
+        // Save financial details
+        const response = await fetch('/api/EQloan/financial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerId: loanData.customerId,
+            loanId: params.id,
+            financialData: {
+              Bincume: parseFloat(loanData.income.businessIncome) || 0,
+              Sincume: parseFloat(loanData.income.salaryIncome) || 0,
+              Oincome: parseFloat(loanData.income.otherIncome) || 0,
+              Iincome: parseFloat(loanData.income.interestIncome) || 0,
+              Bexpence: parseFloat(loanData.expenses.businessExpenses) || 0,
+              utilitybill: parseFloat(loanData.expenses.utilityBills) || 0,
+              livinexpence: parseFloat(loanData.expenses.livingExpenses) || 0,
+              exiLopayment: parseFloat(loanData.expenses.loanPayments) || 0,
+              exiloanamountMon: parseFloat(loanData.expenses.existingLoanAmount) || 0,
+              otherexpe: parseFloat(loanData.expenses.otherExpenses) || 0
+            }
+          })
+        });
+        const data = await response.json();
+        if (data.code === 'ERROR') {
+          alert(data.message);
+          return;
+        }
+      } else if (currentStepId === 'equipment') {
+        // Step 1: Validate required fields before sending
+        console.log('Equipment data:', loanData.equipment);
+        const requiredFields = [
+          loanData.customerId,
+          params.id,
+          loanData.equipment.make,
+          loanData.equipment.model,
+          loanData.equipment.serialNumber,
+          loanData.equipment.capacity,
+          loanData.equipment.generation,
+          loanData.equipment.yom,
+          loanData.equipment.valuationAmount,
+          loanData.equipment.devicePrice,
+          loanData.equipment.downPayment
+        ];
+        console.log('Required fields:', requiredFields);
+        const missingFields = [
+          !loanData.customerId && 'customerId',
+          !params.id && 'loanId',
+          !loanData.equipment.make && 'make',
+          !loanData.equipment.model && 'model',
+          !loanData.equipment.serialNumber && 'serialNumber',
+          !loanData.equipment.capacity && 'capacity',
+          !loanData.equipment.generation && 'generation',
+          !loanData.equipment.yom && 'yom',
+          !loanData.equipment.valuationAmount && 'valuationAmount',
+          !loanData.equipment.devicePrice && 'devicePrice',
+          !loanData.equipment.downPayment && 'downPayment'
+        ].filter(Boolean);
+        if (missingFields.length > 0) {
+          alert('[ERROR] Missing required fields: ' + missingFields.join(', '));
+          return;
+        }
+        // Step 2: Build and log payload
+        const equipmentPayload = {
+          customerId: loanData.customerId,
+          loanId: params.id,
+          equipmentData: {
+            make: loanData.equipment.make,
+            model: loanData.equipment.model,
+            serialNumber: loanData.equipment.serialNumber,
+            capacity: loanData.equipment.capacity,
+            generation: loanData.equipment.generation,
+            yom: loanData.equipment.yom,
+            valuationAmount: loanData.equipment.valuationAmount,
+            devicePrice: loanData.equipment.devicePrice,
+            downPayment: loanData.equipment.downPayment
+          }
+        };
+        console.log('[Equipment Step] Sending payload:', equipmentPayload);
+        alert('[DEBUG] Sending equipment data to backend:\n' + JSON.stringify(equipmentPayload, null, 2));
+        // Step 3: Send to backend
+        const response = await fetch('/api/EQloan/equipment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(equipmentPayload)
+        });
+        const data = await response.json();
+        console.log('[Equipment Step] Save response:', data);
+        alert('[DEBUG] Backend response:\n' + JSON.stringify(data, null, 2));
+        // Step 4: Only proceed if save is confirmed
+        if (data.code === 'ERROR') {
+          alert('[ERROR] ' + data.message);
+          return;
+        }
+        alert('Equipment details saved successfully!');
+      } else if (currentStepId === 'guarantor') {
+        // Save guarantor details
+        for (const guarantor of loanData.guarantors) {
+          if (!guarantor.name || !guarantor.nic) continue;
+          const response = await fetch('/api/EQloan/guarantor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerId: loanData.customerId,
+              loanId: params.id,
+              guarantorData: {
+                name: guarantor.name,
+                nic: guarantor.nic,
+                gender: guarantor.gender,
+                dateOfBirth: guarantor.dateOfBirth,
+                relationship: guarantor.relationship,
+                relationshipOther: guarantor.relationshipOther,
+                address: guarantor.address,
+                province: guarantor.province,
+                gsDivision: guarantor.gsDivision,
+                dsOffice: guarantor.dsOffice,
+                district: guarantor.district,
+                mobile: guarantor.mobile,
+                income: guarantor.income,
+                employment: guarantor.employment,
+                accountNumber: guarantor.accountNumber,
+                bankName: guarantor.bankName,
+                residenceType: guarantor.residenceType
+              }
+            })
+          });
+          const data = await response.json();
+          if (data.code === 'ERROR') {
+            alert(data.message);
+            return;
+          }
+        }
+      } else if (currentStepId === 'supplier') {
+        // Save supplier details
+        const response = await fetch('/api/EQloan/supplier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerId: loanData.customerId,
+            loanId: params.id,
+            supplierData: {
+              name: loanData.supplier.name,
+              brNumber: loanData.supplier.brNumber,
+              idNumber: loanData.supplier.idNumber,
+              accountNumber: loanData.supplier.accountNumber,
+              bankName: loanData.supplier.bankName,
+              branchName: loanData.supplier.branchName
+            }
+          })
+        });
+        const data = await response.json();
+        if (data.code === 'ERROR') {
+          alert(data.message);
+          return;
+        }
+      } else if (currentStepId === 'documents') {
+        // Upload documents
+        const documents = [];
+        if (loanData.investigationImages?.residence) {
+          if (Array.isArray(loanData.investigationImages.residence)) {
+            loanData.investigationImages.residence.forEach((file, index) => {
+              if (file) documents.push({ type: 'residence', file, index });
+            });
+          } else if (loanData.investigationImages.residence) {
+            documents.push({ type: 'residence', file: loanData.investigationImages.residence });
+          }
+        }
+        if (loanData.investigationImages?.selfie) {
+          documents.push({ type: 'selfie', file: loanData.investigationImages.selfie });
+        }
+        for (const doc of documents) {
+          const formData = new FormData();
+          formData.append('loanId', params.id);
+          formData.append('customerId', loanData.customerId);
+          formData.append('documentType', doc.type);
+          formData.append('file', doc.file);
+          if (doc.index !== undefined) {
+            formData.append('index', doc.index);
+          }
+          const response = await fetch('/api/EQloan/upload-document', {
+            method: 'POST',
+            body: formData
+          });
+          const result = await response.json();
+          if (result.code !== 'SUCCESS') {
+            throw new Error(result.message || `Failed to upload ${doc.type} document`);
+          }
+        }
+      }
+      setCurrentStep(current => Math.min(steps.length - 1, current + 1));
+    } catch (error) {
+      alert(error.message || 'Failed to proceed. Please try again.');
+    }
   };
 
   const handlePrevious = () => {
     setCurrentStep(current => Math.max(0, current - 1));
   };
 
-  const handleSubmit = () => {
-    // For now, just show an alert
-    alert("Equipment loan application submitted successfully!");
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('/api/EQloan/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loanId: params.id,
+          customerId: loanData.customerId,
+          comments: loanData.comments || '',
+          status: 'pending'
+        })
+      });
+      const result = await response.json();
+      if (result.code !== 'SUCCESS') {
+        throw new Error(result.message || 'Failed to submit application');
+      }
+      alert("Equipment loan application submitted successfully for admin approval!");
+      // Optionally redirect here
+    } catch (error) {
+      alert(error.message || 'Failed to submit equipment loan application. Please try again.');
+    }
   };
+
 
   const renderStepIndicator = () => {
     return (
