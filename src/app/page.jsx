@@ -24,7 +24,7 @@ export default function LoanManagement() {
     // Set greeting based on time of day with fun emojis
     const hours = new Date().getHours();
     
-    if (hours >= 5 && hours < 12) {
+    if (hours >= 1 && hours < 12) {
       setGreeting("Good Morning");
       setTimeEmojis(["🌅", "☕", "😊"]);
       setMotivationalPhrase("Let's make today productive!");
