@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { openPrintBill } from "./printBill";
 
 export default function TransactionHistoryTable({ 
   transactions = [], 
@@ -91,70 +92,20 @@ export default function TransactionHistoryTable({
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {/* Always visible columns on all screen sizes */}
-              <th 
-                scope="col" 
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('receiptNo')}
-              >
-                Receipt No {getSortDirectionIcon('receiptNo')}
-              </th>
-              <th 
-                scope="col" 
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('date')}
-              >
-                Date {getSortDirectionIcon('date')}
-              </th>
-              <th 
-                scope="col" 
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('amount')}
-              >
-                Amount {getSortDirectionIcon('amount')}
-              </th>
-              <th 
-                scope="col" 
-                className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('type')}
-              >
-                Type {getSortDirectionIcon('type')}
-              </th>
-              
-              {/* Columns that hide on mobile but display on larger screens */}
-              <th 
-                scope="col" 
-                className="hidden md:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('capital')}
-              >
-                Capital {getSortDirectionIcon('capital')}
-              </th>
-              <th 
-                scope="col" 
-                className="hidden md:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('interest')}
-              >
-                Interest {getSortDirectionIcon('interest')}
-              </th>
-              <th 
-                scope="col" 
-                className="hidden md:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('arrears')}
-              >
-                Arrears {getSortDirectionIcon('arrears')}
-              </th>
-              <th 
-                scope="col" 
-                className="hidden md:table-cell px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
-                onClick={() => requestSort('officer')}
-              >
-                Officer {getSortDirectionIcon('officer')}
-              </th>
-              
+              {/* All columns from loan_payments table */}
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('id')}>ID {getSortDirectionIcon('id')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('contractid')}>Contract ID {getSortDirectionIcon('contractid')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('payment_number')}>Payment # {getSortDirectionIcon('payment_number')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('payment_date')}>Payment Date {getSortDirectionIcon('payment_date')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('amount_paid')}>Amount Paid {getSortDirectionIcon('amount_paid')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('payment_method')}>Payment Method {getSortDirectionIcon('payment_method')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('transaction_id')}>Transaction ID {getSortDirectionIcon('transaction_id')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('status')}>Status {getSortDirectionIcon('status')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('notes')}>Notes {getSortDirectionIcon('notes')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => requestSort('setalment')}>Settlement {getSortDirectionIcon('setalment')}</th>
+              <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Bill</th>
               {/* Mobile expand/collapse column */}
-              <th scope="col" className="md:hidden px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                Details
-              </th>
+              <th scope="col" className="md:hidden px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
             </tr>
           </thead>
           
@@ -166,42 +117,62 @@ export default function TransactionHistoryTable({
               return (
                 <React.Fragment key={rowKey}>
                   <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    {/* Always visible columns */}
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      {transaction.receiptNo || "-"}
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.id}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.contractid}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.payment_number}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.payment_date}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">LKR {parseFloat(transaction.amount_paid).toLocaleString()}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.payment_method}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.transaction_id || '-'}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.status}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">{transaction.notes || '-'}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">LKR {parseFloat(transaction.setalment || 0).toLocaleString()}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700">
+                      <Button size="sm" variant="outline" onClick={() => {
+                        // Calculate settlement and remaining settlement
+                        const amountPaid = parseFloat(transaction.amount_paid || 0);
+                        const arrears = parseFloat(transaction.arrears || 0);
+                        const rental = parseFloat(transaction.rental || 0);
+                        
+                        let settlement = 0;
+                        let remainingSettlement = 0;
+                        let remainingArrears = 0;
+
+                        // Calculate arrears after payment
+                        if (amountPaid < arrears) {
+                          remainingArrears = arrears - amountPaid;
+                        }
+
+                        // Calculate settlement and remaining settlement
+                        if (amountPaid > arrears) {
+                          const amountForSettlement = amountPaid - arrears;
+                          settlement = Math.min(amountForSettlement, rental);
+                          remainingSettlement = rental - settlement;
+                        } else {
+                          remainingSettlement = rental;
+                        }
+
+                        // Map DB fields to receipt fields for printBill
+                        openPrintBill({
+                          receiptNo: transaction.payment_number || transaction.id,
+                          paidAt: transaction.payment_date,
+                          contractNo: transaction.contractid,
+                          borrowerName: transaction.borrowerName || transaction.customerName || '-',
+                          paymentMethod: transaction.payment_method,
+                          referenceNo: transaction.transaction_id,
+                          amount: amountPaid,
+                          arrearsAmount: arrears,
+                          remainingArrears: remainingArrears,
+                          settlement: settlement,
+                          remainingSettlement: remainingSettlement,
+                          totalAmount: amountPaid
+                        });
+                      }}>
+                        Print
+                      </Button>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      {transaction.date}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
-                      LKR {parseFloat(transaction.amount).toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm">
-                      <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                        transaction.type === "PAYMENT" ? "bg-green-100 text-green-800" :
-                        transaction.type === "ARREARS" ? "bg-red-100 text-red-800" : 
-                        "bg-blue-100 text-blue-800"
-                      }`}>
-                        {transaction.type}
-                      </span>
-                    </td>
-                    
-                    {/* Columns that hide on mobile */}
-                    <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      LKR {parseFloat(transaction.capital || 0).toLocaleString()}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      LKR {parseFloat(transaction.interest || 0).toLocaleString()}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      {transaction.arrears ? `LKR ${parseFloat(transaction.arrears).toLocaleString()}` : "-"}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-700">
-                      {transaction.officer || "-"}
-                    </td>
-                    
                     {/* Mobile expand/collapse button */}
-                    <td className="md:hidden px-3 py-2 whitespace-nowrap text-sm text-gray-700">
+                    <td className="md:hidden px-2 py-2 whitespace-nowrap text-sm text-gray-700">
                       <button 
                         onClick={() => toggleRowExpansion(index)}
                         className="text-blue-600 hover:text-blue-800"
