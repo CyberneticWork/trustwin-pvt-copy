@@ -566,7 +566,7 @@ export default function InstallmentPage() {
                 return dueRental.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
 
               })()}</p></div>
-              <div><span className="text-xs text-gray-500">Total Outstanding</span><p className="font-medium text-red-600 bg-red-100 px-1 rounded">LKR {totalOutstanding.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</p></div>
+
               <div><span className="text-xs text-gray-500">Interest Amount</span><p className="font-medium bg-blue-100 px-1 rounded">LKR {(() => {
                 if (!facilityData) return '0.00';
                 const result = calculateArrears({

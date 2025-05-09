@@ -121,6 +121,24 @@ export async function POST(req) {
       } catch (e) {
         paymentSchedule = null;
       }
+      // Format payment schedule dates if present
+      let formattedPaymentSchedule = null;
+      if (paymentSchedule) {
+        try {
+          const schedObj = JSON.parse(paymentSchedule);
+          if (Array.isArray(schedObj.schedule)) {
+            schedObj.schedule = schedObj.schedule.map(item => ({
+              ...item,
+              payment_date: formatDate(item.payment_date)
+            }));
+            formattedPaymentSchedule = JSON.stringify(schedObj);
+          } else {
+            formattedPaymentSchedule = paymentSchedule;
+          }
+        } catch (e) {
+          formattedPaymentSchedule = paymentSchedule;
+        }
+      }
       loanDetails = {
         loanType: "Business Loan",
         contractid: businessLoan.contractid,
@@ -137,7 +155,7 @@ export async function POST(req) {
         effectiveRate: null,
         clientReceivingAmount: businessLoan.IssueAmmount !== undefined ? parseFloat(businessLoan.IssueAmmount).toFixed(2) : null,
         status: businessLoan.status,
-        paymentSchedule: paymentSchedule,
+        paymentSchedule: formattedPaymentSchedule,
         residentType: businessLoan.residenttype,
         billType: businessLoan.billtype,
         comment: '',
@@ -183,12 +201,12 @@ export async function POST(req) {
     let paidRentalAmount = '0';
     let transactions = [];
     if (paymentRows.length > 0) {
-      lastPaymentDate = paymentRows[0].payment_date || '';
+      lastPaymentDate = paymentRows[0].payment_date ? formatDate(paymentRows[0].payment_date) : '';
       lastPaidAmount = paymentRows[0].amount_paid ? paymentRows[0].amount_paid.toString() : '';
       paidRentalAmount = paymentRows.reduce((sum, row) => sum + parseFloat(row.amount_paid), 0).toString();
       transactions = paymentRows.map(row => ({
         receiptNo: row.transaction_id || '',
-        date: row.payment_date || '',
+        date: row.payment_date ? formatDate(row.payment_date) : '',
         amount: row.amount_paid ? row.amount_paid.toString() : '',
         type: row.payment_method,
         officer: '', // No officer in this table; can be added if available
