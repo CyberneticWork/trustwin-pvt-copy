@@ -29,7 +29,6 @@
         "route": "/loans/auto-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
         "icon": "BriefcaseBusiness"
       }
-      
     ]
   },
   {
@@ -64,8 +63,19 @@
         "route": "/customer-requests",
         "icon": "BookUser"
       }
-      
     ]
+  },
+  {
+    "id": 15,
+    "name": "Report",
+    "route": "/admin/report",
+    "icon": "FileSpreadsheet"
+  },
+  {
+    "id": 18,
+    "name": "Finance",
+    "route": "/finance",
+    "icon": "Wallet"
   },
   {
     "id": 2,
@@ -89,12 +99,6 @@
         "id": 5,
         "name": "ACL",
         "route": "/admin/ACL",
-        "icon": "UserCog"
-      },
-      {
-        "id": 15,
-        "name": "Report",
-        "route": "/admin/report",
         "icon": "UserCog"
       }
     ]

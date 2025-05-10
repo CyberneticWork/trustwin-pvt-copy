@@ -22,7 +22,9 @@ import {
   BriefcaseBusiness,
   SendHorizontal,
   BookUser,
-  ChevronLeft
+  ChevronLeft,
+  Wallet,
+  FileSpreadsheet
 } from "lucide-react";
 
 const icons = {
@@ -40,7 +42,9 @@ const icons = {
   UserPlus,
   BriefcaseBusiness,
   SendHorizontal,
-  BookUser
+  BookUser,
+  Wallet,
+  FileSpreadsheet
 };
 
 import { Button } from "@/components/ui/button";
