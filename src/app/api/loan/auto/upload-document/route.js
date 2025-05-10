@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 // Your PHP API endpoint
-const UPLOAD_API_URL = 'http://127.0.0.1/api/upload.php';
+const UPLOAD_API_URL = process.env.API + '/upload.php';
 let response  = null;
 
 // Helper function to create FormData from file and metadata
