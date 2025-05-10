@@ -90,6 +90,12 @@
         "name": "ACL",
         "route": "/admin/ACL",
         "icon": "UserCog"
+      },
+      {
+        "id": 15,
+        "name": "Report",
+        "route": "/admin/report",
+        "icon": "UserCog"
       }
     ]
   }
