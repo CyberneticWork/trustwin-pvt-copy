@@ -5,11 +5,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Calendar, User } from "lucide-react";
 import * as React from 'react';
+import { useRouter } from 'next/navigation'
 
 export default function LoanDetailsList({ params }) {
   // Unwrap the params Promise with React.use()
   const unwrappedParams = React.use(params);
   const customerId = unwrappedParams.id;
+  const router = useRouter();
   
   const [clientData, setClientData] = useState({
     clientName: "",
@@ -48,6 +50,7 @@ export default function LoanDetailsList({ params }) {
       fetchLoanDetails();
     }
   }, [customerId]);
+  console.log(clientData.loans[0]);
 
   // Custom LKR icon component
   const LkrIcon = () => (
@@ -133,7 +136,7 @@ export default function LoanDetailsList({ params }) {
                 
                 {/* View Details Button in a better position */}
                 <div className="mt-5 flex justify-end">
-                  <button className="text-sm px-4 py-2 rounded text-white font-medium bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-800 transition-all shadow-md">
+                  <button onClick={() => router.push(`/loan-info/installments/${clientData.loans[0].contractId}`)} className="text-sm px-4 py-2 rounded text-white font-medium bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-800 transition-all shadow-md">
                     View Details
                   </button>
                 </div>

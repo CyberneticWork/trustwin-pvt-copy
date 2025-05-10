@@ -47,6 +47,7 @@ export function SearchClient({ clients, onAddNewClick, loading, onSearch, search
   const handleLoans = (client) => {
     setMenuOpen(false);
     setMenuClient(null);
+    router.push(`/loan-info/${client.id}`);
     // handle loans logic
   };
 
