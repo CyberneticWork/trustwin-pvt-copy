@@ -99,15 +99,15 @@ export async function POST(req) {
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
       console.log("-------------------------------------");
-     console.log(parseInt(data.customerId),
-     parseInt(data.loanid)+""+
-     data.natureOfBusiness+""+
-     data.businessName+""+
-     data.businessRegistrationNo+""+
-     data.businessType+""+
-     `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`+""+
-     data.businessImages[0]+""+
-     data.businessImages[1]+""+
+     console.log(parseInt(data.customerId)+"--"+
+     parseInt(data.loanid)+"--"+
+     data.natureOfBusiness+"--"+
+     data.businessName+"--"+
+     data.businessRegistrationNo+"--"+
+     data.businessType+"--"+
+     `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`+"--"+
+     data.businessImages[0]+"--"+
+     data.businessImages[1]+"--"+
      data.businessImages[2]);
       const businessResult = existingBusiness.length > 0
         ? await connection.execute(
