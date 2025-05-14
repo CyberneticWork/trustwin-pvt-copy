@@ -99,16 +99,16 @@ export async function POST(req) {
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
       console.log("-------------------------------------");
-      console.log(data.businessImages);
-      console.log(data.businessImages[0]);
-      console.log(data.businessImages[1]);
-      console.log(data.businessImages[2]);
-      console.log(data.businessName);
-      console.log(data.businessRegistrationNo);
-      console.log(data.businessType);
-      console.log(data.natureOfBusiness);
-      console.log(data.customerId);
-      console.log(data.loanid);
+     console.log(parseInt(data.customerId),
+     parseInt(data.loanid)+""+
+     data.natureOfBusiness+""+
+     data.businessName+""+
+     data.businessRegistrationNo+""+
+     data.businessType+""+
+     `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`+""+
+     data.businessImages[0]+""+
+     data.businessImages[1]+""+
+     data.businessImages[2]);
       const businessResult = existingBusiness.length > 0
         ? await connection.execute(
             `UPDATE businessdetails SET 
