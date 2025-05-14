@@ -109,6 +109,14 @@ export async function POST(req) {
      data.businessImages[0]+"--"+
      data.businessImages[1]+"--"+
      data.businessImages[2]);
+      // Ensure businessImages contains only strings (filenames/paths) or null
+      const businessImageStrings = (data.businessImages || []).map(img => {
+        if (!img) return null;
+        if (typeof img === 'string') return img;
+        if (typeof img === 'object' && img.filename) return img.filename;
+        return null;
+      });
+
       const businessResult = existingBusiness.length > 0
         ? await connection.execute(
             `UPDATE businessdetails SET 
@@ -127,9 +135,9 @@ export async function POST(req) {
               data.businessRegistrationNo,
               data.businessType,
               `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`,
-              data.businessImages[0] || null,
-              data.businessImages[1] || null,
-              data.businessImages[2] || null,
+              businessImageStrings[0] || null,
+              businessImageStrings[1] || null,
+              businessImageStrings[2] || null,
               existingBusiness[0].id
             ]
           )
@@ -144,9 +152,9 @@ export async function POST(req) {
               data.businessRegistrationNo,
               data.businessType,
               `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`,
-              data.businessImages[0] || null,
-              data.businessImages[1] || null,
-              data.businessImages[2] || null
+              businessImageStrings[0] || null,
+              businessImageStrings[1] || null,
+              businessImageStrings[2] || null
             ]
           );
   
