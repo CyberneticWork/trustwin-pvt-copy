@@ -5,6 +5,27 @@
     "route": "/",
     "icon": "Home"
   },
+ 
+  {
+    "id": 8,
+    "name": "Clients",
+    "route": "/clients",
+    "icon": "Users",
+    "submenu": [
+      {
+        "id": 9,
+        "name": "Search Client",
+        "route": "/clients",
+        "icon": "Search"
+      },
+      {
+        "id": 10,
+        "name": "Add New Client",
+        "route": "/clients/add",
+        "icon": "Users"
+      }
+    ]
+  },
   {
     "id": 7,
     "name": "Loans",
@@ -34,26 +55,6 @@
         "name": "Equipment Loan",
         "route": "/loans/equipment-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
         "icon": "BriefcaseBusiness"
-      }
-    ]
-  },
-  {
-    "id": 8,
-    "name": "Clients",
-    "route": "/clients",
-    "icon": "Users",
-    "submenu": [
-      {
-        "id": 9,
-        "name": "Search Client",
-        "route": "/clients",
-        "icon": "Search"
-      },
-      {
-        "id": 10,
-        "name": "Add New Client",
-        "route": "/clients/add",
-        "icon": "Users"
       }
     ]
   },
