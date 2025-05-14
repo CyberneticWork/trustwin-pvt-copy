@@ -28,6 +28,12 @@
         "name": "Auto Loan",
         "route": "/loans/auto-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
         "icon": "BriefcaseBusiness"
+      },
+      {
+        "id": 16,
+        "name": "Equipment Loan",
+        "route": "/loans/equipment-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
+        "icon": "BriefcaseBusiness"
       }
     ]
   },

@@ -80,7 +80,7 @@ export default function LoanManagement() {
       color: "bg-amber-500",
       textColor: "text-amber-500",
       shadow: "shadow-amber-100",
-      link: "loans/EQ-loan",
+      link: "loans/equipment-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
       description: "Estimate payments for equipment financing"
     }
   ];

@@ -462,9 +462,10 @@ export default function ACL() {
         </CardFooter>
       </Card>
 
+      {/* Improved Dialog with better responsive behavior */}
       <Dialog open={showACLDialog} onOpenChange={setShowACLDialog}>
-        <DialogContent className="max-w-lg sm:max-w-xl p-0 rounded-xl bg-white shadow-xl h-[90vh] sm:h-[600px] w-[95vw] sm:w-[70%] m-0 overflow-hidden mx-auto">
-          <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+        <DialogContent className="max-w-lg sm:max-w-xl p-0 rounded-xl bg-white shadow-xl w-[95vw] sm:w-[80%] md:w-[70%] m-0 overflow-hidden mx-auto flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <DialogTitle className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
               <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               {isMobile ? (
@@ -477,9 +478,9 @@ export default function ACL() {
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="p-4 sm:p-6">
+          <div className="p-4 sm:p-6 flex-grow overflow-hidden flex flex-col">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4 sm:mb-6">
-              {/* Mobile Dropdown */}
+              {/* Mobile Dropdown with improved positioning */}
               <div className="w-full md:flex-1">
                 <div 
                   className="relative sm:hidden w-full"
@@ -496,61 +497,63 @@ export default function ACL() {
                   </div>
                   
                   {isDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-blue-200 rounded-lg shadow-lg">
-                      <div 
-                        className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
-                        onClick={() => {
-                          setSelectedPage("all");
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <Shield className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">All Pages</span>
-                      </div>
-                      {ACLData.map((page) => (
-                        <React.Fragment key={page.id}>
-                          <div 
-                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
-                            onClick={() => {
-                              setSelectedPage(page.route);
-                              setIsDropdownOpen(false);
-                            }}
-                          >
-                            <div className="flex-shrink-0">
-                              {getIcon(page.icon, "h-4 w-4 text-gray-500")}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium truncate">{page.name}</span>
-                                {page.submenu && page.submenu.length > 0 && (
-                                  <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">{page.submenu.length}</span>
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate mt-0.5">{page.route}</div>
-                            </div>
-                          </div>
-                          {page.submenu && page.submenu.map((subPage) => (
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-blue-200 rounded-lg shadow-lg overflow-hidden">
+                      <div className="max-h-60 overflow-y-auto">
+                        <div 
+                          className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                          onClick={() => {
+                            setSelectedPage("all");
+                            setIsDropdownOpen(false);
+                          }}
+                        >
+                          <Shield className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">All Pages</span>
+                        </div>
+                        {ACLData.map((page) => (
+                          <React.Fragment key={page.id}>
                             <div 
-                              key={subPage.id} 
-                              className="pl-8 pr-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700"
+                              className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
                               onClick={() => {
-                                setSelectedPage(subPage.route);
+                                setSelectedPage(page.route);
                                 setIsDropdownOpen(false);
                               }}
                             >
                               <div className="flex-shrink-0">
-                                {getIcon(subPage.icon, "h-3 w-3 text-gray-400")}
+                                {getIcon(page.icon, "h-4 w-4 text-gray-500")}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium truncate">{subPage.name}</span>
+                                  <span className="font-medium truncate">{page.name}</span>
+                                  {page.submenu && page.submenu.length > 0 && (
+                                    <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">{page.submenu.length}</span>
+                                  )}
                                 </div>
-                                <div className="text-xs text-gray-500 truncate mt-0.5">{subPage.route}</div>
+                                <div className="text-xs text-gray-500 truncate mt-0.5">{page.route}</div>
                               </div>
                             </div>
-                          ))}
-                        </React.Fragment>
-                      ))}
+                            {page.submenu && page.submenu.map((subPage) => (
+                              <div 
+                                key={subPage.id} 
+                                className="pl-8 pr-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700"
+                                onClick={() => {
+                                  setSelectedPage(subPage.route);
+                                  setIsDropdownOpen(false);
+                                }}
+                              >
+                                <div className="flex-shrink-0">
+                                  {getIcon(subPage.icon, "h-3 w-3 text-gray-400")}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate">{subPage.name}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 truncate mt-0.5">{subPage.route}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -568,7 +571,6 @@ export default function ACL() {
                       <option value={page.route} className="pl-2">
                         {page.name}
                       </option>
-                     
                     </React.Fragment>
                   ))}
                 </select>
@@ -576,82 +578,84 @@ export default function ACL() {
               <Button
                 onClick={handleAddAccess}
                 disabled={!selectedPage}
-                className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 disabled:bg-blue-300 disabled:cursor-not-allowed px-3 py-2 sm:px-4 sm:py-2 text-sm"
+                className="bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 disabled:bg-blue-300 disabled:cursor-not-allowed px-3 py-2 sm:px-4 sm:py-2 text-sm whitespace-nowrap"
               >
                 <Plus className="h-4 w-4 mr-1" /> Add Access
               </Button>
             </div>
             
-            <div className="border border-blue-200 rounded-xl overflow-hidden">
-              <div className="h-[calc(90vh-240px)] sm:h-[340px] overflow-y-auto p-2">
-                {aclTable.map((item, index) => (
-                  <div key={index} className="border-b border-blue-100 last:border-0 bg-white hover:bg-blue-50 transition-colors">
-                    <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3">
-                      <div className="flex-shrink-0">
-                        {getIcon(item.icon)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <span className="font-medium text-gray-800 truncate text-sm sm:text-base">{item.name}</span>
-                          {item.submenu && item.submenu.length > 0 && (
-                            <span className="text-xs text-blue-600 bg-blue-50 px-1.5 sm:px-2 py-0.5 rounded-full">{item.submenu.length}</span>
-                          )}
+            <div className="border border-blue-200 rounded-xl overflow-hidden flex-grow flex flex-col">
+              {/* Improved scrollable area with flex-grow */}
+              <div className="flex-grow overflow-y-auto p-2">
+                {aclTable.length > 0 ? (
+                  aclTable.map((item, index) => (
+                    <div key={index} className="border-b border-blue-100 last:border-0 bg-white hover:bg-blue-50 transition-colors">
+                      <div className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3">
+                        <div className="flex-shrink-0">
+                          {getIcon(item.icon)}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500 truncate mt-0.5 sm:mt-1">{item.route}</div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteAccess(item.route)}
-                          className="border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 px-2 sm:px-3 py-1 text-xs sm:text-sm"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                          <span className="hidden sm:inline">Remove</span>
-                        </Button>
-                      </div>
-                    </div>
-                    {item.submenu && item.submenu.length > 0 && (
-                      <div className="pl-6 sm:pl-10 border-l border-blue-100 space-y-1">
-                        {item.submenu.map((subItem, subIndex) => (
-                          <div key={subIndex} className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-blue-50">
-                            <div className="flex-shrink-0">
-                              {getIcon(subItem.icon, "h-4 w-4 text-gray-400")}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 sm:gap-3">
-                                <span className="font-medium text-gray-700 truncate text-xs sm:text-sm">{subItem.name}</span>
-                              </div>
-                              <div className="text-xs text-gray-500 truncate mt-0.5">{subItem.route}</div>
-                            </div>
-                            <div className="flex-shrink-0">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteAccess(subItem.route)}
-                                className="border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 px-2 sm:px-3 py-1 text-xs"
-                              >
-                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                                <span className="hidden sm:inline">Remove Submenu</span>
-                              </Button>
-                            </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <span className="font-medium text-gray-800 truncate text-sm sm:text-base">{item.name}</span>
+                            {item.submenu && item.submenu.length > 0 && (
+                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 sm:px-2 py-0.5 rounded-full">{item.submenu.length}</span>
+                            )}
                           </div>
-                        ))}
+                          <div className="text-xs sm:text-sm text-gray-500 truncate mt-0.5 sm:mt-1">{item.route}</div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteAccess(item.route)}
+                            className="border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 px-2 sm:px-3 py-1 text-xs sm:text-sm"
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </Button>
+                        </div>
                       </div>
-                    )}
+                      {item.submenu && item.submenu.length > 0 && (
+                        <div className="pl-6 sm:pl-10 border-l border-blue-100 space-y-1 ml-2">
+                          {item.submenu.map((subItem, subIndex) => (
+                            <div key={subIndex} className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-blue-50 mr-2 rounded-r-lg">
+                              <div className="flex-shrink-0">
+                                {getIcon(subItem.icon, "h-4 w-4 text-gray-400")}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                  <span className="font-medium text-gray-700 truncate text-xs sm:text-sm">{subItem.name}</span>
+                                </div>
+                                <div className="text-xs text-gray-500 truncate mt-0.5">{subItem.route}</div>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteAccess(subItem.route)}
+                                  className="border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200 px-2 sm:px-3 py-1 text-xs"
+                                >
+                                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                                  <span className="hidden sm:inline">Remove</span>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-6 text-center bg-blue-50 h-full rounded-lg">
+                    <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-blue-400 mb-3" />
+                    <p className="text-blue-600 font-medium">No access rules added</p>
+                    <p className="text-blue-500 text-xs sm:text-sm mt-1">Select a page and click Add Access</p>
                   </div>
-                ))}
+                )}
               </div>
-              {aclTable.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 text-center bg-blue-50 rounded-lg h-[calc(90vh-240px)] sm:h-[340px]">
-                  <Shield className="h-10 w-10 sm:h-12 sm:w-12 text-blue-400 mb-3" />
-                  <p className="text-blue-600 font-medium">No access rules added</p>
-                  <p className="text-blue-500 text-xs sm:text-sm mt-1">Select a page and click Add Access</p>
-                </div>
-              )}
             </div>
           </div>
-          <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-blue-100 bg-blue-50 flex justify-end space-x-2 sm:space-x-3">
+          <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-blue-100 bg-blue-50 flex-shrink-0 flex justify-end space-x-2 sm:space-x-3">
             <Button
               variant="outline"
               onClick={() => setShowACLDialog(false)}

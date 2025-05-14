@@ -514,22 +514,6 @@ export default function Sidebar() {
               );
             })}
 
-            {/* Settings Section */}
-            {!collapsed && (
-              <p className="px-4 text-xs text-slate-400 uppercase font-semibold tracking-wider mt-8 mb-4">Settings</p>
-            )}
-
-            {collapsed && <div className="mt-6"></div>}
-
-            {/* Always show Settings */}
-            <NavItem 
-              icon={<Settings className="w-5 h-5" />} 
-              label="Settings" 
-              isActive={activeNav === "settings"}
-              onClick={() => handleNavigation("settings")}
-              collapsed={collapsed}
-              isMobile={isMobile}
-            />
           </div>
         </div>
         
