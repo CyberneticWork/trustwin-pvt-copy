@@ -135,10 +135,7 @@ export async function POST(req) {
           )
 
         : await connection.execute(
-            `INSERT INTO businessdetails (
-              customerid, loandid, nature, name, regno, type, addres,
-              img1, img2, img3
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO businessdetails (customerid, loandid, nature, name, regno, type, addres,img1, img2, img3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               parseInt(data.customerId),
               parseInt(data.loanid),
