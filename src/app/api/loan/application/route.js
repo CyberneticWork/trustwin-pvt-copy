@@ -98,7 +98,16 @@ export async function POST(req) {
         `SELECT id FROM businessdetails WHERE customerid = ? AND loandid = ?`,
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
-
+      console.log(data.businessImages);
+      console.log(data.businessImages[0]);
+      console.log(data.businessImages[1]);
+      console.log(data.businessImages[2]);
+      console.log(data.businessName);
+      console.log(data.businessRegistrationNo);
+      console.log(data.businessType);
+      console.log(data.natureOfBusiness);
+      console.log(data.customerId);
+      console.log(data.loanid);
       const businessResult = existingBusiness.length > 0
         ? await connection.execute(
             `UPDATE businessdetails SET 
@@ -142,16 +151,7 @@ export async function POST(req) {
               data.businessImages[2] || null
             ]
           );
-          console.log(data.businessImages);
-          console.log(data.businessImages[0]);
-          console.log(data.businessImages[1]);
-          console.log(data.businessImages[2]);
-          console.log(data.businessName);
-          console.log(data.businessRegistrationNo);
-          console.log(data.businessType);
-          console.log(data.natureOfBusiness);
-          console.log(data.customerId);
-          console.log(data.loanid);
+  
       // Check if financial details exist
       const [existingFinancial] = await connection.execute(
         `SELECT id FROM financialdetails WHERE customerid = ? AND loandid = ?`,
