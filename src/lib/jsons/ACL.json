@@ -106,6 +106,12 @@
         "name": "ACL",
         "route": "/admin/ACL",
         "icon": "UserCog"
+      },
+      {
+        "id": 18,
+        "name": "Loan Approval",
+        "route": "/admin/loan-approval",
+        "icon": "UserCog"
       }
     ]
   }

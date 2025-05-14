@@ -98,6 +98,7 @@ export async function POST(req) {
         `SELECT id FROM businessdetails WHERE customerid = ? AND loandid = ?`,
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
+      console.log("-------------------------------------");
       console.log(data.businessImages);
       console.log(data.businessImages[0]);
       console.log(data.businessImages[1]);
