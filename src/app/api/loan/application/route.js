@@ -123,6 +123,7 @@ export async function POST(req) {
               existingBusiness[0].id
             ]
           )
+
         : await connection.execute(
             `INSERT INTO businessdetails (
               customerid, loandid, nature, name, regno, type, addres,
@@ -141,7 +142,16 @@ export async function POST(req) {
               data.businessImages[2] || null
             ]
           );
-
+          console.log(data.businessImages);
+          console.log(data.businessImages[0]);
+          console.log(data.businessImages[1]);
+          console.log(data.businessImages[2]);
+          console.log(data.businessName);
+          console.log(data.businessRegistrationNo);
+          console.log(data.businessType);
+          console.log(data.natureOfBusiness);
+          console.log(data.customerId);
+          console.log(data.loanid);
       // Check if financial details exist
       const [existingFinancial] = await connection.execute(
         `SELECT id FROM financialdetails WHERE customerid = ? AND loandid = ?`,
