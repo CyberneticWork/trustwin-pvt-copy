@@ -33,8 +33,19 @@ export async function POST(req) {
     });
 
     if (!uploadResponse.ok) {
-      const errorData = await uploadResponse.json().catch(() => ({}));
-      throw new Error(`Failed to upload file: ${errorData.message || uploadResponse.statusText}`);
+      let errorData = {};
+      let rawErrorText = '';
+      try {
+        errorData = await uploadResponse.json();
+      } catch (jsonErr) {
+        try {
+          rawErrorText = await uploadResponse.text();
+        } catch (textErr) {
+          rawErrorText = '[Unable to read error response body]';
+        }
+      }
+      console.error('External upload.php error:', errorData, rawErrorText);
+      throw new Error(`Failed to upload file: ${errorData.message || rawErrorText || uploadResponse.statusText}`);
     }
 
     const uploadResult = await uploadResponse.json();

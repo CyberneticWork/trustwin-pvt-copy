@@ -98,7 +98,17 @@ export async function POST(req) {
         `SELECT id FROM businessdetails WHERE customerid = ? AND loandid = ?`,
         [parseInt(data.customerId), parseInt(data.loanid)]
       );
-
+      console.log("-------------------------------------");
+     console.log(parseInt(data.customerId)+"--"+
+     parseInt(data.loanid)+"--"+
+     data.natureOfBusiness+"--"+
+     data.businessName+"--"+
+     data.businessRegistrationNo+"--"+
+     data.businessType+"--"+
+     `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`+"--"+
+     data.businessImages[0]+"--"+
+     data.businessImages[1]+"--"+
+     data.businessImages[2]);
       const businessResult = existingBusiness.length > 0
         ? await connection.execute(
             `UPDATE businessdetails SET 
@@ -123,11 +133,9 @@ export async function POST(req) {
               existingBusiness[0].id
             ]
           )
+
         : await connection.execute(
-            `INSERT INTO businessdetails (
-              customerid, loandid, nature, name, regno, type, addres,
-              img1, img2, img3
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO businessdetails (customerid, loandid, nature, name, regno, type, addres,img1, img2, img3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               parseInt(data.customerId),
               parseInt(data.loanid),
@@ -141,7 +149,7 @@ export async function POST(req) {
               data.businessImages[2] || null
             ]
           );
-
+  
       // Check if financial details exist
       const [existingFinancial] = await connection.execute(
         `SELECT id FROM financialdetails WHERE customerid = ? AND loandid = ?`,
