@@ -127,9 +127,9 @@ export async function POST(req) {
               data.businessRegistrationNo,
               data.businessType,
               `${data.address.line1 || ''}, ${data.address.line2 || ''}, ${data.address.line3 || ''}`,
-              data.businessImages[0] || null,
-              data.businessImages[1] || null,
-              data.businessImages[2] || null,
+              "--",
+              "--",
+              "--",
               existingBusiness[0].id
             ]
           )
