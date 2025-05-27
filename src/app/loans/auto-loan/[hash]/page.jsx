@@ -119,6 +119,9 @@ export default function AutoLoanCalculatorPage() {
       });
 
       const result = await response.json();
+      console.log('====================================');
+      console.log(loanData);
+      console.log('====================================');
 
       if (result.code === 'SUCCESS') {
         // Loan application created successfully
