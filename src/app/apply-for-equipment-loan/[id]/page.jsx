@@ -468,7 +468,7 @@ export default function ApplyForEquipmentLoanPage() {
           }
         };
         console.log('[Equipment Step] Sending payload:', equipmentPayload);
-        alert('[DEBUG] Sending equipment data to backend:\n' + JSON.stringify(equipmentPayload, null, 2));
+        // alert('[DEBUG] Sending equipment data to backend:\n' + JSON.stringify(equipmentPayload, null, 2));
         // Step 3: Send to backend
         const response = await fetch('/api/EQloan/equipment', {
           method: 'POST',
