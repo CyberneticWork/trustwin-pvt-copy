@@ -55,11 +55,10 @@ export async function POST(req) {
       // Insert new record
       const [insertResult] = await connection.execute(
         `INSERT INTO supplier_details (
-          id, loanid, name, br_number, id_number,
+          loanid, name, br_number, id_number,
           account_number, bank_name, branch_name
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES ( ?, ?, ?, ?, ?, ?, ?)`,
         [
-          supplierData.idNumber, // Using id_number as ID
           loanId,
           supplierData.name,
           supplierData.brNumber,
