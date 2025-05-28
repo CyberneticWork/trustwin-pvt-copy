@@ -45,6 +45,11 @@ export default function LoanApprovalPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const recordsPerPage = 12;
 
+  // New state for filters
+  const [statusFilter, setStatusFilter] = useState("");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
+
   // State for data from API
   const [loanRequests, setLoanRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -202,18 +207,47 @@ export default function LoanApprovalPage() {
     }
   };
 
-  // Filter loans based on search query
-  const filteredLoans = loanRequests.filter(loan =>
-    searchQuery === "" ? true : (
-      loan.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+    setStartDateFilter("");
+    setEndDateFilter("");
+    setCurrentPage(1);
+  };
+
+  // Filter loans based on all criteria
+  const filteredLoans = loanRequests.filter(loan => {
+    // Text search filter
+    const matchesSearch = searchQuery === "" ? true : (
       loan.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loan.contractId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loan.croName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loan.revenueAmount?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loan.loanType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loan.status?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+    );
+    
+    // Status filter
+    const matchesStatus = statusFilter === "" ? true : 
+      loan.status.toLowerCase() === statusFilter.toLowerCase();
+    
+    // Date filter
+    let matchesDate = true;
+    if (startDateFilter) {
+      const loanDate = new Date(loan.applicationDate);
+      const filterStartDate = new Date(startDateFilter);
+      matchesDate = matchesDate && loanDate >= filterStartDate;
+    }
+    if (endDateFilter) {
+      const loanDate = new Date(loan.applicationDate);
+      const filterEndDate = new Date(endDateFilter);
+      filterEndDate.setHours(23, 59, 59); // Include end of day
+      matchesDate = matchesDate && loanDate <= filterEndDate;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   // Calculate pagination values
   const totalPages = Math.ceil(filteredLoans.length / recordsPerPage);
@@ -334,19 +368,76 @@ export default function LoanApprovalPage() {
       </div>
 
       <Card>
-        <CardHeader className="bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+        <CardHeader className="bg-gray-50">
           <CardTitle className="text-lg">Loan Applications</CardTitle>
-
-          {/* Search Box */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="text"
-              placeholder="Search loans..."
-              className="pl-8 h-9"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-3">
+            {/* Search Box */}
+            <div className="relative w-full sm:w-60">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Search loans..."
+                className="pl-8 h-9"
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+            </div>
+            
+            {/* Status Filter */}
+            <div className="w-full sm:w-40">
+              <select 
+                className="w-full h-9 rounded-md border border-input px-3 py-1"
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                value={statusFilter}
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="waiting for funds">Waiting for Funds</option>
+                <option value="rejected">Rejected</option>
+                <option value="under the review">Under Review</option>
+              </select>
+            </div>
+            
+            {/* Date Filters */}
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Input
+                type="date"
+                className="h-9 w-full sm:w-auto"
+                onChange={(e) => {
+                  setStartDateFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                value={startDateFilter}
+                placeholder="Start Date"
+              />
+              <Input
+                type="date"
+                className="h-9 w-full sm:w-auto"
+                onChange={(e) => {
+                  setEndDateFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                value={endDateFilter}
+                placeholder="End Date"
+              />
+            </div>
+            
+            {/* Reset Filters Button */}
+            {(searchQuery || statusFilter || startDateFilter || endDateFilter) && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetFilters}
+                className="h-9"
+              >
+                Reset Filters
+              </Button>
+            )}
           </div>
         </CardHeader>
 
@@ -356,12 +447,12 @@ export default function LoanApprovalPage() {
             <table className="w-full table-fixed">
               <thead className="bg-gray-50">
                 <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="px-3 py-3 w-[10%]">Loan ID</th>
-                  <th className="px-3 py-3 w-[15%]">Customer</th>
+                  {/* Removed Loan ID column */}
+                  <th className="px-3 py-3 w-[19%]">Customer</th>
                   <th className="px-3 py-3 w-[10%]">Contract</th>
                   <th className="px-3 py-3 w-[12%]">CRO</th>
                   <th className="px-3 py-3 w-[12%]">Revenue</th>
-                  <th className="px-3 py-3 w-[10%]">Status</th>
+                  <th className="px-3 py-3 w-[15%]">Status</th>
                   <th className="px-3 py-3 w-[15%]">Loan Type</th>
                   <th className="px-3 py-3 w-[10%]">Date</th>
                   <th className="px-3 py-3 w-[6%]"></th>
@@ -371,13 +462,12 @@ export default function LoanApprovalPage() {
                 {currentRecords.length > 0 ? (
                   currentRecords.map((loan) => (
                     <tr key={loan.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 truncate">{loan.id}</td>
+                      {/* Removed Loan ID cell */}
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.customerName}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.contractId}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.croName}</td>
                       <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.revenueAmount}</td>
                       <td className="px-3 py-3 whitespace-nowrap">
-
                         <Badge className={`${loan.status === "Active" ? "bg-green-100 text-green-800" :
                             loan.status === "Waiting for Funds" ? "bg-blue-100 text-blue-800" :
                               loan.status === "Rejected" ? "bg-red-100 text-red-800" :
@@ -402,7 +492,7 @@ export default function LoanApprovalPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-6 text-gray-500">
+                    <td colSpan={8} className="text-center py-6 text-gray-500">
                       No loan applications found matching your search.
                     </td>
                   </tr>
@@ -500,7 +590,7 @@ export default function LoanApprovalPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedLoan ? `Loan Application: ${selectedLoan.id}` : 'Loan Details'}
+              {selectedLoan ? `Loan Application Details` : 'Loan Details'}
             </DialogTitle>
           </DialogHeader>
           {selectedLoan && (
@@ -509,6 +599,7 @@ export default function LoanApprovalPage() {
               onClose={() => setIsDialogOpen(false)}
               onApprove={handleApprove}
               onReject={handleReject}
+              disableContractId={selectedLoan.status?.toLowerCase() === "pending"} // Requirement 2
             />
           )}
         </DialogContent>
