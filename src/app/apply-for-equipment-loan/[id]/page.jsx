@@ -477,7 +477,7 @@ export default function ApplyForEquipmentLoanPage() {
         });
         const data = await response.json();
         console.log('[Equipment Step] Save response:', data);
-        alert('[DEBUG] Backend response:\n' + JSON.stringify(data, null, 2));
+        // alert('\n' + JSON.stringify(data, null, 2));
         // Step 4: Only proceed if save is confirmed
         if (data.code === 'ERROR') {
           alert('[ERROR] ' + data.message);
