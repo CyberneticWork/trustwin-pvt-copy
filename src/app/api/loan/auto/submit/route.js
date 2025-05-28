@@ -67,7 +67,7 @@ export async function POST(request) {
       `UPDATE auto_loan_applications 
        SET contractid = ?, comment = ?, status = ?, updated_at = NOW() 
        WHERE id = ? AND customer_id = ?`,
-      [contractId, comments || '', 'under the review', loanId, customerId]
+      [contractId, comments || '', 'pending', loanId, customerId]
     );
 
     if (result.affectedRows === 0) {
