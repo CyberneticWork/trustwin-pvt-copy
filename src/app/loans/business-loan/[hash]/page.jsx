@@ -242,8 +242,8 @@ export default function SimpleBusinessLoanPage() {
         loanType === "daily"
           ? `${dailyTermDays} days`
           : loanType === "weekly"
-          ? `${weeks} weeks`
-          : `${months} months`,
+            ? `${weeks} weeks`
+            : `${months} months`,
       initialPay: showInitialPayments
         ? docCharges + serviceCharges + insuranceCharges
         : 0,
@@ -255,8 +255,8 @@ export default function SimpleBusinessLoanPage() {
         loanType === "daily"
           ? `${dailyTermDays} days`
           : loanType === "weekly"
-          ? `${weeks} weeks`
-          : `${months} months`,
+            ? `${weeks} weeks`
+            : `${months} months`,
     };
 
     console.log("Loan Details:", loanDetails);
@@ -582,8 +582,8 @@ export default function SimpleBusinessLoanPage() {
                         {loanType === "daily"
                           ? "Daily"
                           : loanType === "weekly"
-                          ? "Weekly"
-                          : "Monthly"}{" "}
+                            ? "Weekly"
+                            : "Monthly"}{" "}
                         Payment
                       </p>
                       <p className="text-2xl font-bold">
@@ -618,12 +618,12 @@ export default function SimpleBusinessLoanPage() {
                         Interest Rate
                       </p>
                       <p className="font-large ">
-                        {loanType === "daily" ? dailyRate : monthlyRate}% 
+                        {loanType === "daily" ? dailyRate : monthlyRate}%
                         {loanType === "daily"
                           ? " Monthly"
                           : interestFrequency === "monthly"
-                          ? " Monthly"
-                          : " Yearly"}
+                            ? " Monthly"
+                            : " Yearly"}
                       </p>
                     </div>
                     <div>
@@ -674,8 +674,8 @@ export default function SimpleBusinessLoanPage() {
                           {loanType === "daily"
                             ? "Daily Loan"
                             : loanType === "weekly"
-                            ? "Weekly Loan"
-                            : "Monthly Loan"}
+                              ? "Weekly Loan"
+                              : "Monthly Loan"}
                         </span>
                       </div>
                       <div>
@@ -686,8 +686,8 @@ export default function SimpleBusinessLoanPage() {
                           {loanType === "daily"
                             ? `${dailyTermDays} days`
                             : loanType === "weekly"
-                            ? `${weeks} weeks`
-                            : `${months} months`}
+                              ? `${weeks} weeks`
+                              : `${months} months`}
                         </span>
                       </div>
                       <div>
@@ -716,8 +716,8 @@ export default function SimpleBusinessLoanPage() {
                             {serviceChargeOption === "capitalize"
                               ? "Capitalize Initial Charges"
                               : serviceChargeOption === "separate"
-                              ? "Client Pays Separately"
-                              : "Withdraw from Capital"}
+                                ? "Client Pays Separately"
+                                : "Withdraw from Capital"}
                           </span>
                         </div>
                       )}
@@ -738,7 +738,12 @@ export default function SimpleBusinessLoanPage() {
                   <Button
                     className="w-full"
                     onClick={handleApplyLoan}
-                    disabled={loading} // Disable the button while loading
+                    disabled={
+                      loading ||
+                      !decodedData?.customerid ||
+                      decodedData.customerid === 0 ||
+                      decodedData.customerid === null
+                    }
                   >
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -749,6 +754,14 @@ export default function SimpleBusinessLoanPage() {
                       "Apply for This Loan"
                     )}
                   </Button>
+                  {(!loading && (!decodedData?.customerid || decodedData.customerid === 0 || decodedData.customerid === null)) && (
+                    <div className="mt-2 text-sm text-red-600 font-medium flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z" />
+                      </svg>
+                      <span>Customer not found. Please search and select a valid customer.</span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <p>Calculating results...</p>

@@ -170,6 +170,9 @@ export default function AutoLoanCalculatorPage() {
   // State for expanding the amortization table
   const [showFullAmortization, setShowFullAmortization] = useState(false);
   
+  // Error state for loan application
+  const [applyError, setApplyError] = useState('');
+
   // Calculate loan details when parameters change
   useEffect(() => {
     // Calculate actual loan amount based on vehicle price, down payment, trade-in
@@ -604,16 +607,71 @@ export default function AutoLoanCalculatorPage() {
                     {showFullAmortization ? "Hide Amortization Schedule" : "Show Full Amortization Schedule"}
                   </Button>
                   
+                  {applyError && (
+                    <div className="text-red-600 text-sm font-semibold mb-2 text-center">
+                      {applyError}
+                    </div>
+                  )}
+                 
                   <Button 
-                    onClick={handleApplyLoan}
+                    onClick={() => {
+                      const hash = params.hash;
+                      let customerId = null;
+                      try {
+                        const decodedHash = atob(hash);
+                        const list = decodedHash.split(',');
+                        customerId = list[2]?.split('=')[1];
+                      } catch (e) {
+                        customerId = null;
+                      }
+                      if (!customerId || customerId === "0" || customerId === null) {
+                        setApplyError("Customer not found. Please search and select a valid customer.");
+                        return;
+                      }
+                      setApplyError('');
+                      handleApplyLoan();
+                    }}
                     style={{ 
                       width: "100%", 
                       marginTop: "8px",
                       backgroundColor: "#2563eb"
                     }}
+                    disabled={
+                      (() => {
+                        try {
+                          const hash = params.hash;
+                          const decodedHash = atob(hash);
+                          const list = decodedHash.split(',');
+                          const customerId = list[2]?.split('=')[1];
+                          return !customerId || customerId === "0" || customerId === null;
+                        } catch {
+                          return true;
+                        }
+                      })()
+                    }
                   >
                     Apply for This Auto Loan
                   </Button>
+                  {(() => {
+                    try {
+                      const hash = params.hash;
+                      const decodedHash = atob(hash);
+                      const list = decodedHash.split(',');
+                      const customerId = list[2]?.split('=')[1];
+                      if (!customerId || customerId === "0" || customerId === null) {
+                        return (
+                           <div className="mt-2 text-sm text-red-600 font-medium flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z" />
+                      </svg>
+                      <span>Customer not found. Please search and select a valid customer.</span>
+                    </div>
+                        );
+                      }
+                      return null;
+                    } catch {
+                    }
+                  })()}
                 </div>
               ) : (
                 <p>Calculating results...</p>
