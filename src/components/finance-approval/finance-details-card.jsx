@@ -160,7 +160,7 @@ export default function FinanceDetailsCard({ loan, onClose, onApprove, onReject,
             <div className="border rounded-md p-3 mb-3 space-y-2">
               <h4 className="font-medium text-sm">Loan Information</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {loan.id.startsWith("A") ? (
+                {loan.id.startsWith("A") || loan.id.startsWith("E") ? (
                   <>
                     <div>
                       <p className="text-gray-500">Loan Amount</p>

@@ -139,7 +139,7 @@ export async function GET(req) {
           `SELECT * FROM equipment_loan_applications WHERE id = ?`,
           [id]
         );
-        
+        console.log("equi",loanResult);
         if (loanResult.length === 0) {
           return new Response(
             JSON.stringify({ error: "Equipment loan not found" }),
@@ -171,7 +171,7 @@ export async function GET(req) {
         
         // Get equipment details if available
         const [equipmentResult] = await connection.execute(
-          `SELECT * FROM equipment_details WHERE loanid = ?`,
+          `SELECT * FROM eqdetails WHERE loandid = ?`,
           [id]
         );
         
@@ -183,7 +183,7 @@ export async function GET(req) {
         
         // Get supplier details if available
         const [supplierResult] = await connection.execute(
-          `SELECT * FROM equipment_supplier_details WHERE loanid = ?`,
+          `SELECT * FROM supplier_details WHERE loanid = ?`,
           [id]
         );
         
@@ -193,6 +193,7 @@ export async function GET(req) {
             supplierDetails: supplierResult[0]
           };
         }
+   
       } else {
         return new Response(
           JSON.stringify({ error: "Invalid loan type" }),

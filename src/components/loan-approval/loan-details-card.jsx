@@ -112,7 +112,7 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
             <div className="border rounded-md p-3 mb-3 space-y-2">
               <h4 className="font-medium text-sm">Loan Information</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {loan.id.startsWith('A') ? (
+                {loan.id.startsWith('A') || loan.id.startsWith('E')? (
                   <>
                     <div>
                       <p className="text-gray-500">Loan Amount</p>
@@ -201,6 +201,31 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
                 <div>
                   <p className="text-gray-500">Year</p>
                   <p>{loan.details.additionalDetails.vehicleDetails.yom}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+           {/* Equipment Details for Equipment Loans */}
+          {loan.id.startsWith('E') && loan.details.additionalDetails?.equipmentDetails && (
+            <div className="border rounded-md p-3 mb-3 space-y-2">
+              <h4 className="font-medium text-sm">Equipment Information</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-gray-500">Make</p>
+                  <p>{loan.details.additionalDetails.equipmentDetails.Make}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Model</p>
+                  <p>{loan.details.additionalDetails.equipmentDetails.Model}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Serial No</p>
+                  <p>{loan.details.additionalDetails.equipmentDetails.SerialNumber}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Year Manufacture</p>
+                  <p>{loan.details.additionalDetails.equipmentDetails.YearManufacture}</p>
                 </div>
               </div>
             </div>

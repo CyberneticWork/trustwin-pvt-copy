@@ -40,6 +40,21 @@ export async function GET() {
         ORDER BY b.addat DESC
       `);
 
+      const [equipmentLoanResults] = await connection.execute(`
+       SELECT 
+      p.id,
+      c.fullname AS customerName,
+      p.contractid,
+      e.name AS croName,
+      p.loan_amount AS revenueAmount,
+      p.status,
+      DATE_FORMAT(p.created_at, '%b %d, %Y') AS applicationDate
+      FROM equipment_loan_applications p
+      JOIN customer c ON p.customer_id = c.id
+      LEFT JOIN employees e ON p.CROid = e.id
+      ORDER BY p.created_at DESC
+
+      `);
       // Format auto loans
       const formattedAutoLoans = autoLoanResults.map(loan => ({
         id: `A-${loan.id}`,
@@ -47,9 +62,22 @@ export async function GET() {
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
         loanType: "Auto Loan",
+        applicationDate: loan.applicationDate
+      }));
+
+      // Format Equipment Loans
+      const formattEquipmentLoans = equipmentLoanResults.map(loan => ({
+        id: `E-${loan.id}`,
+        customerName: loan.customerName,
+        contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
+        croName: loan.croName || "Unassigned",
+        revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        loanType: "Equipment Loan",
         applicationDate: loan.applicationDate
       }));
 
@@ -60,15 +88,15 @@ export async function GET() {
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
         loanType: loan.loanType === "daily" ? "Business (Daily)" : "Business (Monthly)",
         applicationDate: loan.applicationDate
       }));
 
       // Combine all loan types
-      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans];
-      
+      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans, ...formattEquipmentLoans];
+
       // Sort by most recent date
       allLoans.sort((a, b) => {
         const dateA = new Date(a.applicationDate);

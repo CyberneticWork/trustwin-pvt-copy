@@ -54,6 +54,23 @@ export async function GET(request) {
         ORDER BY b.addat DESC
       `, [customerId]);
 
+      // Get equipment loans for the specific customer
+      const [equipmentLoanResults] = await connection.execute(`
+          SELECT 
+      p.id,
+      c.fullname AS customerName,
+      p.contractid,
+      e.name AS croName,
+      p.loan_amount AS revenueAmount,
+      p.status,
+      DATE_FORMAT(p.created_at, '%b %d, %Y') AS applicationDate
+      FROM equipment_loan_applications p
+      JOIN customer c ON p.customer_id = c.id
+      LEFT JOIN employees e ON p.CROid = e.id
+       WHERE p.customer_id = ?
+      ORDER BY p.created_at DESC
+      `, [customerId]);
+      console.log(equipmentLoanResults);
       // Format auto loans
       const formattedAutoLoans = autoLoanResults.map(loan => ({
         id: `A-${loan.id}`,
@@ -61,28 +78,39 @@ export async function GET(request) {
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
         loanType: "Auto Loan",
         applicationDate: loan.applicationDate
       }));
-
-      // Format business loans
-      const formattedBusinessLoans = businessLoanResults.map(loan => ({
-        id: `B-${loan.id}`,
+      // Format Equipment Loans
+      const formattedEquipmentLoans = equipmentLoanResults.map(loan => ({
+        id: `E-${loan.id}`,
         customerName: loan.customerName,
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        loanType: "Equipment Loan",
+        applicationDate: loan.applicationDate
+      }));
+      // Format business loans
+      const formattedBusinessLoans = businessLoanResults.map(loan => ({
+        id: `E-${loan.id}`,
+        customerName: loan.customerName,
+        contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
+        croName: loan.croName || "Unassigned",
+        revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
+        status: loan.status === "fund waiting" ? "Waiting for Funds" :
+          loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
         loanType: loan.loanType === "daily" ? "Business (Daily)" : "Business (Monthly)",
         applicationDate: loan.applicationDate
       }));
 
       // Combine all loan types
-      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans];
-      
+      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans, ...formattedEquipmentLoans];
+
       // Sort by most recent date
       allLoans.sort((a, b) => {
         const dateA = new Date(a.applicationDate);
@@ -107,8 +135,8 @@ export async function GET(request) {
       } : null;
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           data: customerData || { clientName: "Customer not found", clientId: "", loans: [] }
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }

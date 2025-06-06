@@ -112,7 +112,60 @@ export async function GET(req) {
             financialDetails: financialResult[0]
           };
         }
-      } else {
+      } else if (loanType === 'E') {
+
+       // Equipment loan
+        const [loanResult] = await connection.execute(
+          `SELECT * FROM equipment_loan_applications WHERE id = ?`,
+          [id]
+        );
+        
+        if (loanResult.length === 0) {
+          return new Response(
+            JSON.stringify({ error: "Equipment loan not found" }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        loanDetails = loanResult[0];
+        
+        // Get customer details
+        const [customerResult] = await connection.execute(
+          `SELECT * FROM customer WHERE id = ?`,
+          [loanDetails.customer_id]
+        );
+        
+        if (customerResult.length > 0) {
+          customerDetails = customerResult[0];
+        }
+        
+        // Get equipment details if available
+        const [equipmentResult] = await connection.execute(
+          `SELECT * FROM eqdetails WHERE loandid = ?`,
+          [id]
+        );
+        
+        if (equipmentResult.length > 0) {
+          additionalDetails = {
+           equipmentResult: equipmentResult[0]
+          };
+        }
+        
+        // Get financial details if available
+        const [financialResult] = await connection.execute(
+          `SELECT * FROM financialdetails WHERE loandid = ?`,
+          [id]
+        );
+        
+        if (financialResult.length > 0) {
+          additionalDetails = {
+            ...additionalDetails,
+            financialDetails: financialResult[0]
+          };
+        }
+      
+       }
+       else {
         return new Response(
           JSON.stringify({ error: "Invalid loan type" }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }

@@ -43,7 +43,14 @@ export async function POST(req) {
           `UPDATE loan_bussiness SET status = ? WHERE id = ?`,
           [status, id]
         );
-      } else {
+      } else if (loanType === 'E') {
+        // Equipment loan
+        await connection.execute(
+          `UPDATE equipment_loan_applications SET status = ? WHERE id = ?`,
+          [status, id]
+        );
+      }
+      else {
         return new Response(
           JSON.stringify({ error: "Invalid loan type" }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
