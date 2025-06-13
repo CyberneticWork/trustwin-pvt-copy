@@ -61,10 +61,6 @@ export default function EquipmentLoanCalculatorPage() {
   };
 
   const handleApplyLoan = async () => {
-    if (!decodedData) {
-      alert("Failed to decode customer data. Please try again.");
-      return;
-    }
     try {
       // Get parameters from the URL
       const hash = params.hash;
