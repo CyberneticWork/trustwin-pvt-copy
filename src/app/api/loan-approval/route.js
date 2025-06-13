@@ -40,35 +40,73 @@ export async function GET() {
         ORDER BY b.addat DESC
       `);
 
+      const [equipmentLoanResults] = await connection.execute(`
+        SELECT 
+          b.id,
+          c.fullname as customerName,
+          b.contractid,
+          e.name as croName,
+          b.loan_amount as revenueAmount,
+          b.status,
+          'Equipment Loan' as loanType,
+          DATE_FORMAT(b.created_at, '%b %d, %Y') as applicationDate
+        FROM equipment_loan_applications b
+        JOIN customer c ON b.customer_id = c.id 
+        LEFT JOIN employees e ON b.CROid = e.id
+        ORDER BY b.created_at DESC
+      `);
+
+      // Format equipment loans  
+      const formattedEquipmentLoans = equipmentLoanResults.map((loan) => ({
+        id: `E-${loan.id}`,
+        customerName: loan.customerName,
+        contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
+        croName: loan.croName || "Unassigned", 
+        revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
+        status: loan.status === "fund waiting" 
+          ? "Waiting for Funds"
+          : loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        loanType: loan.loanType,
+        applicationDate: loan.applicationDate,
+      }));
       // Format auto loans
-      const formattedAutoLoans = autoLoanResults.map(loan => ({
+      const formattedAutoLoans = autoLoanResults.map((loan) => ({
         id: `A-${loan.id}`,
         customerName: loan.customerName,
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        status:
+          loan.status === "fund waiting"
+            ? "Waiting for Funds"
+            : loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
         loanType: "Auto Loan",
-        applicationDate: loan.applicationDate
+        applicationDate: loan.applicationDate,
       }));
 
       // Format business loans
-      const formattedBusinessLoans = businessLoanResults.map(loan => ({
+      const formattedBusinessLoans = businessLoanResults.map((loan) => ({
         id: `B-${loan.id}`,
         customerName: loan.customerName,
         contractId: loan.contractid || `CT-${4590 + parseInt(loan.id)}`,
         croName: loan.croName || "Unassigned",
         revenueAmount: `LKR ${Number(loan.revenueAmount).toLocaleString()}`,
-        status: loan.status === "fund waiting" ? "Waiting for Funds" : 
-                loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
-        loanType: loan.loanType === "daily" ? "Business (Daily)" : "Business (Monthly)",
-        applicationDate: loan.applicationDate
+        status:
+          loan.status === "fund waiting"
+            ? "Waiting for Funds"
+            : loan.status.charAt(0).toUpperCase() + loan.status.slice(1),
+        loanType:
+          loan.loanType === "daily" ? "Business (Daily)" : "Business (Monthly)",
+        applicationDate: loan.applicationDate,
       }));
 
       // Combine all loan types
-      const allLoans = [...formattedAutoLoans, ...formattedBusinessLoans];
-      
+      const allLoans = [
+        ...formattedAutoLoans,
+        ...formattedBusinessLoans,
+        ...formattedEquipmentLoans,
+      ];
+
       // Sort by most recent date
       allLoans.sort((a, b) => {
         const dateA = new Date(a.applicationDate);
@@ -76,18 +114,18 @@ export async function GET() {
         return dateB - dateA;
       });
 
-      return new Response(
-        JSON.stringify({ success: true, data: allLoans }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ success: true, data: allLoans }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     } finally {
       await connection.end();
     }
   } catch (error) {
     console.error("Error fetching loan approval data:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
