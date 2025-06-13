@@ -483,6 +483,23 @@ export function AddClient({ onSubmit, onCancel, initialNIC  }) {
               {errors.dob && <p className="text-xs text-red-600">{errors.dob}</p>}
             </div>
             <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm font-medium">Location <span className="text-red-500">*</span></Label>
+              <Select
+                value={formData.location}
+                onValueChange={(value) => handleChange('location', value)}
+                disabled={clientExists && customerStatus !== "draft"}
+              >
+                <SelectTrigger id="location">
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="JE">JE</SelectItem>
+                  <SelectItem value="NG">NG</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.location && <p className="text-xs text-red-600">{errors.location}</p>}
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="telno" className="text-sm font-medium">Telephone No <span className="text-red-500">*</span></Label>
               <Input 
                 id="telno" 
