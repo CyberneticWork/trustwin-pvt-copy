@@ -15,7 +15,7 @@
 
 # next.js
 /.next/
-
+API.rest
 
 # misc
 .DS_Store
