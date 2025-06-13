@@ -342,6 +342,60 @@ export async function POST(req) {
 
     // --- Date fields are sent as raw DB values; frontend will handle formatting ---
 
+
+
+    const [telno] = await connection.execute(
+      `SELECT telno FROM customer WHERE id = ?`,
+      [loanDetails.customerId]
+    );
+    // need to get the number of due periods
+    // Return the loan details
+    console.log(
+      "\x1b[32m%s\x1b[0m",
+      "totalPaidAmount:",
+      loanDetails.totalPaidAmount
+    );
+    console.log(
+      "\x1b[32m%s\x1b[0m",
+      "shouldHavePaidByToday:",
+      loanDetails.shouldHavePaidByToday
+    );
+    console.log("\x1b[32m%s\x1b[0m", "arrears:", loanDetails.arrears);
+    console.log("\x1b[32m%s\x1b[0m", "telno:", telno[0].telno);
+    // console.log('\x1b[32m%s\x1b[0m',"advancedArrears:", loanDetails);
+
+
+    // SMS SEND
+
+    // const url = "https://app.text.lk/api/v3/sms/send";
+
+    // const headers = {
+    //   Authorization:
+    //     `Bearer ${process.env.SMS_TOKEN}`,
+    //   "Content-Type": "application/json",
+    //   Accept: "application/json",
+    // };
+
+    // const data = {
+    //   recipient: `${telno[0].telno}`,
+    //   sender_id: "TextLKDemo",
+    //   type: "plain",
+    //   message: `Hi! You have paid Rs. ${loanDetails.totalPaidAmount} so far. As of today, you should have paid Rs. ${loanDetails.shouldHavePaidByToday}. Your outstanding balance is Rs. ${loanDetails.arrears}. Please settle it soon. Thank you!`,
+    // };
+
+    // fetch(url, {
+    //   method: "POST",
+    //   headers: headers,
+    //   body: JSON.stringify(data),
+    // })
+    //   .then((response) => response.json())
+    //   .then((json) => {
+    //     console.log("Response:", json);
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error:", error);
+    //   });
+
     // Return the loan details
     return new Response(
       JSON.stringify({
