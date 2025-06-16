@@ -33,6 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import FinanceDetailsCard from "@/components/finance-approval/finance-details-card";
 
 export default function FinanceDashboard() {
   const router = useRouter();
@@ -47,6 +49,8 @@ export default function FinanceDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [recentLoans, setRecentLoans] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState(null);
 
   useEffect(() => {
     const fetchFinanceData = async () => {
@@ -86,6 +90,28 @@ export default function FinanceDashboard() {
 
   const handleNavigateToFinanceApproval = () => {
     router.push('/finance/finance-approvals');
+  };
+
+  const handleViewLoan = async (loan) => {
+    if (loan.status === "Approved") {
+      // Fetch loan details if needed
+      setSelectedLoan({ ...loan, loading: true });
+      setIsDialogOpen(true);
+
+      try {
+        const response = await fetch(`/api/finance-approval/details?id=${loan.id}`);
+        const data = await response.json();
+        if (data.success) {
+          setSelectedLoan({ ...loan, loading: false, details: data.data });
+        } else {
+          setSelectedLoan({ ...loan, loading: false, error: data.error || "Failed to fetch details" });
+        }
+      } catch (err) {
+        setSelectedLoan({ ...loan, loading: false, error: err.message });
+      }
+    } else {
+      router.push(`/finance/finance-approvals?id=${loan.id}`);
+    }
   };
 
   if (isLoading) {
@@ -315,7 +341,7 @@ export default function FinanceDashboard() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => router.push(`/finance/finance-approvals?id=${loan.id}`)}
+                        onClick={() => handleViewLoan(loan)}
                       >
                         View
                       </Button>
@@ -330,12 +356,26 @@ export default function FinanceDashboard() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end">
-          <Button variant="outline" onClick={handleNavigateToFinanceApproval}>
-            View All Requests
-          </Button>
-        </CardFooter>
       </Card>
+
+      {/* Loan Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedLoan ? `Loan Details: ${selectedLoan.id}` : "Loan Details"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLoan && (
+            <FinanceDetailsCard
+              loan={selectedLoan}
+              onClose={() => setIsDialogOpen(false)}
+              // No approve/reject for approved loans
+              isLoading={selectedLoan.loading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
