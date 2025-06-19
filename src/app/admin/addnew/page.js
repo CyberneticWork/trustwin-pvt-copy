@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,18 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { 
-  Loader2, 
-  User, 
-  BadgeCheck, 
-  X, 
-  Mail, 
-  Phone, 
-  Building2, 
-  Lock, 
-  UserPlus, 
-  CheckCircle2, 
-  AlertCircle 
+import {
+  Loader2,
+  User,
+  BadgeCheck,
+  X,
+  Mail,
+  Phone,
+  Building2,
+  Lock,
+  UserPlus,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
@@ -39,7 +46,9 @@ export default function AddEmployee() {
     password: "",
     tellno: "",
     branchID: "",
-    addby: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).id : ""
+    addby: localStorage.getItem("user")
+      ? JSON.parse(localStorage.getItem("user")).id
+      : "",
   });
 
   const [branches, setBranches] = useState([]);
@@ -58,7 +67,7 @@ export default function AddEmployee() {
 
   const fetchBranches = async () => {
     try {
-      const response = await fetch('/api/branches');
+      const response = await fetch("/api/branches");
       const json = await response.json();
       if (json.code === "SUCCESS") {
         setBranches(json.data);
@@ -70,18 +79,18 @@ export default function AddEmployee() {
 
   const checkAvailability = async (type, value) => {
     try {
-      const response = await fetch('/api/employees/check-availability', {
-        method: 'POST',
+      const response = await fetch("/api/employees/check-availability", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           type: type,
-          value: value
-        })
+          value: value,
+        }),
       });
       const json = await response.json();
-      
+
       if (json.code === "SUCCESS") {
         return json.available;
       } else {
@@ -95,11 +104,11 @@ export default function AddEmployee() {
 
   const handleUsernameChange = async (e) => {
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, username: value }));
-    
+    setFormData((prev) => ({ ...prev, username: value }));
+
     if (value.trim()) {
       setUsernameChecking(true);
-      const isAvailable = await checkAvailability('username', value);
+      const isAvailable = await checkAvailability("username", value);
       setUsernameAvailable(isAvailable);
       setUsernameChecking(false);
     } else {
@@ -110,11 +119,11 @@ export default function AddEmployee() {
 
   const handleEmpidChange = async (e) => {
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, empid: value }));
-    
+    setFormData((prev) => ({ ...prev, empid: value }));
+
     if (value.trim()) {
       setEmpidChecking(true);
-      const isAvailable = await checkAvailability('empid', value);
+      const isAvailable = await checkAvailability("empid", value);
       setEmpidAvailable(isAvailable);
       setEmpidChecking(false);
     } else {
@@ -171,20 +180,20 @@ export default function AddEmployee() {
       }
 
       // Check if username and empid are still available
-      if (await checkAvailability('username', formData.username) === false) {
+      if ((await checkAvailability("username", formData.username)) === false) {
         throw new Error("Username is already taken");
       }
-      if (await checkAvailability('empid', formData.empid) === false) {
+      if ((await checkAvailability("empid", formData.empid)) === false) {
         throw new Error("Employee ID is already taken");
       }
 
       // Submit the form
-      const response = await fetch('/api/employees/add', {
-        method: 'POST',
+      const response = await fetch("/api/employees/add", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const json = await response.json();
@@ -201,7 +210,9 @@ export default function AddEmployee() {
           password: "",
           tellno: "",
           branchID: "",
-          addby: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).id : ""
+          addby: localStorage.getItem("user")
+            ? JSON.parse(localStorage.getItem("user")).id
+            : "",
         });
         setUsernameAvailable(true);
         setEmpidAvailable(true);
@@ -221,12 +232,16 @@ export default function AddEmployee() {
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-blue-500" />
-            <CardTitle className="text-2xl font-bold">Add New Employee</CardTitle>
+            <CardTitle className="text-2xl font-bold">
+              Add New Employee
+            </CardTitle>
           </div>
-          <CardDescription>Fill in the details to add a new employee to the system</CardDescription>
+          <CardDescription>
+            Fill in the details to add a new employee to the system
+          </CardDescription>
           <Separator />
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {success && (
@@ -238,15 +253,17 @@ export default function AddEmployee() {
                 </AlertDescription>
               </Alert>
             )}
-            
+
             {error && (
               <Alert variant="destructive" className="bg-red-50 border-red-200">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertTitle className="text-red-800">Error</AlertTitle>
-                <AlertDescription className="text-red-700">{error}</AlertDescription>
+                <AlertDescription className="text-red-700">
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               {/* Username */}
               <div className="space-y-2">
@@ -260,27 +277,33 @@ export default function AddEmployee() {
                     type="text"
                     value={formData.username}
                     onChange={handleUsernameChange}
-                    className={`pr-20 ${!usernameAvailable && !usernameChecking ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`pr-20 ${
+                      !usernameAvailable && !usernameChecking
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                     placeholder="Enter username"
                   />
                   {usernameChecking ? (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                     </div>
-                  ) : formData.username && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                      {usernameAvailable ? (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <BadgeCheck className="h-3 w-3" />
-                          Available
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <X className="h-3 w-3" />
-                          Taken
-                        </span>
-                      )}
-                    </div>
+                  ) : (
+                    formData.username && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                        {usernameAvailable ? (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <BadgeCheck className="h-3 w-3" />
+                            Available
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <X className="h-3 w-3" />
+                            Taken
+                          </span>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               </div>
@@ -297,27 +320,33 @@ export default function AddEmployee() {
                     type="text"
                     value={formData.empid}
                     onChange={handleEmpidChange}
-                    className={`pr-20 ${!empidAvailable && !empidChecking ? 'border-red-300 focus:ring-red-300' : ''}`}
+                    className={`pr-20 ${
+                      !empidAvailable && !empidChecking
+                        ? "border-red-300 focus:ring-red-300"
+                        : ""
+                    }`}
                     placeholder="Enter employee ID"
                   />
                   {empidChecking ? (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                     </div>
-                  ) : formData.empid && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                      {empidAvailable ? (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <BadgeCheck className="h-3 w-3" />
-                          Available
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <X className="h-3 w-3" />
-                          Taken
-                        </span>
-                      )}
-                    </div>
+                  ) : (
+                    formData.empid && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                        {empidAvailable ? (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <BadgeCheck className="h-3 w-3" />
+                            Available
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <X className="h-3 w-3" />
+                            Taken
+                          </span>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               </div>
@@ -332,7 +361,9 @@ export default function AddEmployee() {
                   id="name"
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="Enter full name"
                 />
               </div>
@@ -347,7 +378,9 @@ export default function AddEmployee() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, email: e.target.value }))
+                  }
                   placeholder="name@example.com"
                 />
               </div>
@@ -360,7 +393,9 @@ export default function AddEmployee() {
                 </Label>
                 <Select
                   value={formData.roll}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, roll: value }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, roll: value }))
+                  }
                 >
                   <SelectTrigger id="role" className="w-full">
                     <SelectValue placeholder="Select role" />
@@ -385,7 +420,12 @@ export default function AddEmployee() {
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
                   placeholder="Set a secure password"
                 />
               </div>
@@ -400,11 +440,15 @@ export default function AddEmployee() {
                   id="phone"
                   type="tel"
                   value={formData.tellno}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tellno: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, tellno: e.target.value }))
+                  }
                   placeholder="10-digit phone number"
                   className="appearance-none"
                 />
-                <p className="text-xs text-gray-500">Must be a 10-digit number</p>
+                <p className="text-xs text-gray-500">
+                  Must be a 10-digit number
+                </p>
               </div>
 
               {/* Branch */}
@@ -414,15 +458,17 @@ export default function AddEmployee() {
                   Branch
                 </Label>
                 <Select
-                  value={formData.branchID}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, branchID: value }))}
+                  value={String(formData.branchID)} // Ensure it's a string
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, branchID: value }))
+                  }
                 >
                   <SelectTrigger id="branch" className="w-full">
                     <SelectValue placeholder="Select branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {branches.map(branch => (
-                      <SelectItem key={branch.id} value={branch.id}>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={String(branch.id)}>
                         {branch.branch} ({branch.shortcode})
                       </SelectItem>
                     ))}
@@ -446,19 +492,22 @@ export default function AddEmployee() {
                 />
                 {formData.addby && (
                   <p className="text-xs text-gray-500">
-                    Added by: {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : ''}
+                    Added by:{" "}
+                    {localStorage.getItem("user")
+                      ? JSON.parse(localStorage.getItem("user")).name
+                      : ""}
                   </p>
                 )}
               </div>
             </div>
           </form>
         </CardContent>
-        
+
         <CardFooter className="flex justify-end pt-2 pb-6 px-6 border-t">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             onClick={handleSubmit}
-            disabled={loading || !usernameAvailable || !empidAvailable} 
+            disabled={loading || !usernameAvailable || !empidAvailable}
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
           >
             {loading ? (
