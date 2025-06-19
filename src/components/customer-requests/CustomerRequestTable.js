@@ -206,9 +206,9 @@ export default function CustomerRequestTable({ data }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
+                  {/* <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem> */}
                 </SelectContent>
               </Select>
               
