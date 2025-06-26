@@ -11,6 +11,24 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useParams , useRouter } from 'next/navigation'
 
+function robustBase64Decode(hash) {
+  if (!hash || typeof hash !== "string") return null;
+  try {
+    let base64;
+    try {
+      base64 = decodeURIComponent(hash);
+    } catch {
+      base64 = hash;
+    }
+    base64 = base64.replace(/-/g, "+").replace(/_/g, "/");
+    base64 = base64.replace(/[^A-Za-z0-9+/=]/g, "");
+    while (base64.length % 4 !== 0) base64 += "=";
+    return atob(base64);
+  } catch {
+    return null;
+  }
+}
+
 export default function AutoLoanCalculatorPage() {
   const params = useParams()
   console.log(params);
@@ -49,20 +67,13 @@ export default function AutoLoanCalculatorPage() {
 
   const handleApplyLoan = async () => {
     try {
-      // Get parameters from the URL
       const hash = params.hash;
-      
-      // Decode base64 hash
-      const decodedHash = atob(hash);
-      console.log(decodedHash);
-    const list = decodedHash.split(',');
-    console.log(list);
-      
-      // Get customer ID from the URL parameter
-      const customerId = list[2].split('=')[1];
-      const CROid = list[1].split('=')[1];
-      const Addby = list[0].split('=')[1];
-      
+      const decodedHash = robustBase64Decode(hash);
+      if (!decodedHash) throw new Error("Invalid or corrupted link.");
+      const list = decodedHash.split(',');
+      const customerId = list[2]?.split('=')[1];
+      const CROid = list[1]?.split('=')[1];
+      const Addby = list[0]?.split('=')[1];
       if (!customerId || !CROid || !Addby) {
         alert('Required parameters are missing');
         return;
@@ -618,7 +629,8 @@ export default function AutoLoanCalculatorPage() {
                       const hash = params.hash;
                       let customerId = null;
                       try {
-                        const decodedHash = atob(hash);
+                        const decodedHash = robustBase64Decode(hash);
+                        if (!decodedHash) throw new Error();
                         const list = decodedHash.split(',');
                         customerId = list[2]?.split('=')[1];
                       } catch (e) {
@@ -640,7 +652,8 @@ export default function AutoLoanCalculatorPage() {
                       (() => {
                         try {
                           const hash = params.hash;
-                          const decodedHash = atob(hash);
+                          const decodedHash = robustBase64Decode(hash);
+                          if (!decodedHash) return true;
                           const list = decodedHash.split(',');
                           const customerId = list[2]?.split('=')[1];
                           return !customerId || customerId === "0" || customerId === null;
@@ -655,21 +668,23 @@ export default function AutoLoanCalculatorPage() {
                   {(() => {
                     try {
                       const hash = params.hash;
-                      const decodedHash = atob(hash);
+                      const decodedHash = robustBase64Decode(hash);
+                      if (!decodedHash) return null;
                       const list = decodedHash.split(',');
                       const customerId = list[2]?.split('=')[1];
                       if (!customerId || customerId === "0" || customerId === null) {
                         return (
-                           <div className="mt-2 text-sm text-red-600 font-medium flex items-center space-x-2">
-                      <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z" />
-                      </svg>
-                      <span>Customer not found. Please search and select a valid customer.</span>
-                    </div>
+                          <div className="mt-2 text-sm text-red-600 font-medium flex items-center space-x-2">
+                            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0z" />
+                            </svg>
+                            <span>Customer not found. Please search and select a valid customer.</span>
+                          </div>
                         );
                       }
                       return null;
                     } catch {
+                      return null;
                     }
                   })()}
                 </div>

@@ -34,7 +34,17 @@ export default function SimpleBusinessLoanPage() {
     if (hash) {
       setLoading(true); // Start loading animation
       try {
-        const decodedString = atob(hash); // Decode the Base64 string
+        // 1. URL decode first
+        let base64 = decodeURIComponent(hash);
+
+        // 2. Pad base64 if needed
+        while (base64.length % 4 !== 0) {
+          base64 += "=";
+        }
+
+        // 3. Decode base64
+        const decodedString = atob(base64);
+
         const params = Object.fromEntries(
           decodedString.split(",").map((pair) => pair.split("="))
         );

@@ -343,6 +343,24 @@ export default function EquipmentLoanCalculatorPage() {
     };
   };
 
+  function robustBase64Decode(hash) {
+    if (!hash || typeof hash !== "string") return null;
+    try {
+      let base64;
+      try {
+        base64 = decodeURIComponent(hash);
+      } catch {
+        base64 = hash;
+      }
+      base64 = base64.replace(/-/g, "+").replace(/_/g, "/");
+      base64 = base64.replace(/[^A-Za-z0-9+/=]/g, "");
+      while (base64.length % 4 !== 0) base64 += "=";
+      return atob(base64);
+    } catch {
+      return null;
+    }
+  }
+
   return (
     <div
       style={{
@@ -964,7 +982,11 @@ export default function EquipmentLoanCalculatorPage() {
                     disabled={(() => {
                       try {
                         const hash = params.hash;
-                        const decodedHash = atob(hash);
+                        const decodedHash = robustBase64Decode(hash);
+                        if (!decodedHash) {
+                          alert("Invalid or corrupted link. Please check your URL.");
+                          return;
+                        }
                         const list = decodedHash.split(",");
                         const customerId = list[2]?.split("=")[1];
                         return (
