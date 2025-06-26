@@ -402,10 +402,10 @@ export async function POST(req) {
     // --- Date fields are sent as raw DB values; frontend will handle formatting ---
 
     // SMS GATE WAY SETUP
-    // const [telno] = await connection.execute(
-    //   `SELECT telno FROM customer WHERE id = ?`,
-    //   [loanDetails.customerId]
-    // );
+    const [telno] = await connection.execute(
+      `SELECT telno FROM customer WHERE id = ?`,
+      [loanDetails.customerId]
+    );
     // need to get the number of due periods
     // Return the loan details
     // console.log(
@@ -424,34 +424,34 @@ export async function POST(req) {
 
     // SMS SEND
 
-    // const url = "https://app.text.lk/api/v3/sms/send";
+    const url = "https://app.text.lk/api/v3/sms/send";
 
-    // const headers = {
-    //   Authorization:
-    //     `Bearer ${process.env.SMS_TOKEN}`,
-    //   "Content-Type": "application/json",
-    //   Accept: "application/json",
-    // };
+    const headers = {
+      Authorization:
+        `Bearer ${process.env.SMS_TOKEN}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
 
-    // const data = {
-    //   recipient: `${telno[0].telno}`,
-    //   sender_id: "TextLKDemo",
-    //   type: "plain",
-    //   message: `Hi! You have paid Rs. ${loanDetails.totalPaidAmount} so far. As of today, you should have paid Rs. ${loanDetails.shouldHavePaidByToday}. Your outstanding balance is Rs. ${loanDetails.arrears}. Please settle it soon. Thank you!`,
-    // };
+    const data = {
+      recipient: `${telno[0].telno}`,
+      sender_id: "TextLKDemo",
+      type: "plain",
+      message: `Hi! You have paid Rs. ${loanDetails.totalPaidAmount} so far. As of today, you should have paid Rs. ${loanDetails.shouldHavePaidByToday}. Your outstanding balance is Rs. ${loanDetails.arrears}. Please settle it soon. Thank you!`,
+    };
 
-    // fetch(url, {
-    //   method: "POST",
-    //   headers: headers,
-    //   body: JSON.stringify(data),
-    // })
-    //   .then((response) => response.json())
-    //   .then((json) => {
-    //     console.log("Response:", json);
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error:", error);
-    //   });
+    fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.json())
+      .then((json) => {
+        console.log("Response:", json);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
 
     // Return the loan details
     return new Response(
