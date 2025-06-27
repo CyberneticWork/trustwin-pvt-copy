@@ -59,11 +59,31 @@ export default function AddEmployee() {
   const [empidChecking, setEmpidChecking] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+   const [roles, setRoles] = useState([]);
 
   // Fetch branches on component mount
   useEffect(() => {
     fetchBranches();
   }, []);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch("/api/roles");
+        const data = await res.json();
+        setRoles(data.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+      }
+    };
+
+    fetchRoles();
+  }, []);
+
+  const handleSelectChange = (e) => {
+    setFormData({ ...formData, roll: e.target.value });
+  };
 
   const fetchBranches = async () => {
     try {
@@ -386,28 +406,33 @@ export default function AddEmployee() {
               </div>
 
               {/* Role */}
-              <div className="space-y-2">
-                <Label htmlFor="role" className="flex items-center gap-1">
-                  <BadgeCheck className="h-4 w-4 text-gray-500" />
-                  Role
-                </Label>
-                <Select
-                  value={formData.roll}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, roll: value }))
-                  }
+              <div>
+                <label
+                  htmlFor="roll"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
                 >
-                  <SelectTrigger id="role" className="w-full">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(rollData).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        {value}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Role
+                </label>
+                <select
+                  id="roll"
+                  name="roll"
+                  value={formData.roll}
+                  onChange={handleSelectChange}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="" disabled>
+                    Select a role
+                  </option>
+                  {loading ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    roles.map((role) => (
+                      <option key={role.id} value={role.role_key}>
+                        {role.role_key} - {role.role_value}
+                      </option>
+                    ))
+                  )}
+                </select>
               </div>
 
               {/* Password */}

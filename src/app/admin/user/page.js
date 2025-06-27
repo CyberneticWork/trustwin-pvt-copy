@@ -3,11 +3,39 @@
 import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Search, Pencil, Trash2, Plus, X, RefreshCw, Lock, Shield, User, Mail, Phone, BarChart, Building } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  Pencil,
+  Trash2,
+  Plus,
+  X,
+  RefreshCw,
+  Lock,
+  Shield,
+  User,
+  Mail,
+  Phone,
+  BarChart,
+  Building,
+} from "lucide-react";
 import ACLData from "@/lib/jsons/ACL.json";
+import roles from "@/lib/jsons/roll.json";
 import {
   Select,
   SelectContent,
@@ -38,18 +66,19 @@ export default function UserManagement() {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [formData, setFormData] = useState({});
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]);
 
   // Function to fetch admins from API
   const fetchAdmins = async () => {
     try {
-      const response = await fetch('/api/employees/getadmns');
+      const response = await fetch("/api/employees/getadmns");
       const json = await response.json();
       if (json.code === "SUCCESS") {
         // Map API data to expected format for table
-        const mappedAdmins = json.data.map(emp => ({
+        const mappedAdmins = json.data.map((emp) => ({
           id: emp.id,
           username: emp.username,
           name: emp.name,
@@ -58,7 +87,7 @@ export default function UserManagement() {
           empid: emp.empid,
           tellno: emp.tellno,
           branchID: emp.branchID,
-          access: emp.access || 0 // Default to 0 if access is not provided
+          access: emp.access || 0, // Default to 0 if access is not provided
         }));
         setOriginalAdmins(mappedAdmins);
       } else {
@@ -69,11 +98,26 @@ export default function UserManagement() {
     }
   };
 
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch("/api/roles");
+        const data = await res.json();
+        setRoles(data.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+      }
+    };
+
+    fetchRoles();
+  }, []);
+
   // Fetch branches on component mount
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await fetch('/api/branches');
+        const response = await fetch("/api/branches");
         const json = await response.json();
         if (json.code === "SUCCESS") {
           setBranches(json.data);
@@ -94,13 +138,17 @@ export default function UserManagement() {
   // Real-time filtered admins using useMemo for performance
   const filteredAdmins = useMemo(() => {
     if (!search.trim()) return originalAdmins;
-    
-    const searchTerms = search.toLowerCase().split(" ").filter(term => term);
-    
-    return originalAdmins.filter(admin => {
-      const searchableText = `${admin.username} ${admin.name} ${admin.email}`.toLowerCase();
+
+    const searchTerms = search
+      .toLowerCase()
+      .split(" ")
+      .filter((term) => term);
+
+    return originalAdmins.filter((admin) => {
+      const searchableText =
+        `${admin.username} ${admin.name} ${admin.email}`.toLowerCase();
       // Check if all search terms are included in the searchable text
-      return searchTerms.every(term => searchableText.includes(term));
+      return searchTerms.every((term) => searchableText.includes(term));
     });
   }, [originalAdmins, search]);
 
@@ -131,54 +179,55 @@ export default function UserManagement() {
       empid: admin.empid,
       roll: admin.roll,
       tellno: admin.tellno,
-      branchID: admin.branchID.toString() // Convert to string to match select value
+      branchID: admin.branchID.toString(), // Convert to string to match select value
     });
     setShowEditDialog(true);
   };
 
   const handleResetPassword = async (adminId) => {
     console.log(adminId);
-    
 
-    const id = JSON.parse(localStorage.getItem('user'))['id'];
+    const id = JSON.parse(localStorage.getItem("user"))["id"];
     console.log(id);
 
     try {
       // Verify the password using the API
-      const verifyResponse = await fetch('/api/employees/verify-password', {
-        method: 'POST',
+      const verifyResponse = await fetch("/api/employees/verify-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id: id,
-          password: currentPassword
-        })
+          password: currentPassword,
+        }),
       });
       const verifyJson = await verifyResponse.json();
 
       if (verifyJson.code === "SUCCESS") {
         // If password is correct, proceed with reset
-        const response = await fetch('/api/employees/reset-password', {
-          method: 'POST',
+        const response = await fetch("/api/employees/reset-password", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id: adminId
-          })
+            id: adminId,
+          }),
         });
         const json = await response.json();
 
         if (json.code === "SUCCESS") {
           alert("Password reset successfully to Password@123");
           setShowPasswordDialog(false);
-          setCurrentPassword('');
+          setCurrentPassword("");
         } else {
           alert("Failed to reset password: " + json.message);
         }
       } else {
-        alert(verifyJson.message || "Incorrect current password. Please try again.");
+        alert(
+          verifyJson.message || "Incorrect current password. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error resetting password:", error);
@@ -189,23 +238,25 @@ export default function UserManagement() {
   const handleAccessToggle = async (adminId, access) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/employees/toggle-access', {
-        method: 'POST',
+      const response = await fetch("/api/employees/toggle-access", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id: adminId,
-          access: access
-        })
+          access: access,
+        }),
       });
       const json = await response.json();
-      
+
       if (json.code === "SUCCESS") {
         // Update the admin's access status in the local state
-        setOriginalAdmins(prev => prev.map(admin => 
-          admin.id === adminId ? { ...admin, access: access } : admin
-        ));
+        setOriginalAdmins((prev) =>
+          prev.map((admin) =>
+            admin.id === adminId ? { ...admin, access: access } : admin
+          )
+        );
         // Refresh the table to ensure we get the latest data
         fetchAdmins();
         alert("Access status updated successfully");
@@ -222,15 +273,15 @@ export default function UserManagement() {
 
   const handleUpdateAdmin = async () => {
     try {
-      const response = await fetch('/api/employees/update', {
-        method: 'POST',
+      const response = await fetch("/api/employees/update", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           id: selectedAdmin.id,
-          ...formData
-        })
+          ...formData,
+        }),
       });
       const json = await response.json();
       if (json.code === "SUCCESS") {
@@ -250,20 +301,27 @@ export default function UserManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const currentPageData = filteredAdmins.slice((page - 1) * limit, page * limit);
+  const handleSelectChange = (e) => {
+    setFormData({ ...formData, roll: e.target.value });
+  };
+
+  const currentPageData = filteredAdmins.slice(
+    (page - 1) * limit,
+    page * limit
+  );
 
   // Function to get initials from name
   const getInitials = (name) => {
     return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -303,17 +361,27 @@ export default function UserManagement() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="px-0 py-0">
           <ScrollArea className="w-full overflow-auto">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow>
-                  <TableHead className="font-medium text-slate-700">User</TableHead>
-                  <TableHead className="font-medium text-slate-700">Contact</TableHead>
-                  <TableHead className="font-medium text-slate-700">Role & ID</TableHead>
-                  <TableHead className="font-medium text-slate-700">Access</TableHead>
-                  <TableHead className="font-medium text-slate-700">Actions</TableHead>
+                  <TableHead className="font-medium text-slate-700">
+                    User
+                  </TableHead>
+                  <TableHead className="font-medium text-slate-700">
+                    Contact
+                  </TableHead>
+                  <TableHead className="font-medium text-slate-700">
+                    Role & ID
+                  </TableHead>
+                  <TableHead className="font-medium text-slate-700">
+                    Access
+                  </TableHead>
+                  <TableHead className="font-medium text-slate-700">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -323,11 +391,17 @@ export default function UserManagement() {
                       <TableCell className="py-3">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 bg-blue-100 text-blue-700">
-                            <AvatarFallback>{getInitials(admin.name)}</AvatarFallback>
+                            <AvatarFallback>
+                              {getInitials(admin.name)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium text-slate-800">{admin.name}</div>
-                            <div className="text-sm text-slate-500">@{admin.username}</div>
+                            <div className="font-medium text-slate-800">
+                              {admin.name}
+                            </div>
+                            <div className="text-sm text-slate-500">
+                              @{admin.username}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -347,7 +421,10 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell className="py-3">
                         <div className="flex flex-col gap-1">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-normal">
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-200 font-normal"
+                          >
                             <User className="h-3 w-3 mr-1" />
                             {admin.roll}
                           </Badge>
@@ -362,16 +439,23 @@ export default function UserManagement() {
                           <Button
                             variant={admin.access === 1 ? "outline" : "ghost"}
                             size="sm"
-                            onClick={() => handleAccessToggle(admin.id, admin.access === 1 ? 0 : 1)}
+                            onClick={() =>
+                              handleAccessToggle(
+                                admin.id,
+                                admin.access === 1 ? 0 : 1
+                              )
+                            }
                             className={`
                               px-3 py-1 h-8 rounded-md transition-all
-                              ${admin.access === 1 
-                                ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' 
-                                : 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'}
+                              ${
+                                admin.access === 1
+                                  ? "bg-green-50 text-green-700 hover:bg-green-100 border-green-200"
+                                  : "bg-red-50 text-red-700 hover:bg-red-100 border-red-200"
+                              }
                             `}
                           >
                             <Lock className="h-3.5 w-3.5 mr-1.5" />
-                            {admin.access === 1 ? 'Allowed' : 'Denied'}
+                            {admin.access === 1 ? "Allowed" : "Denied"}
                           </Button>
                         </div>
                       </TableCell>
@@ -409,8 +493,8 @@ export default function UserManagement() {
                         <Search className="h-8 w-8 mb-2 opacity-30" />
                         <p>No admins found</p>
                         {search && (
-                          <Button 
-                            variant="link" 
+                          <Button
+                            variant="link"
                             onClick={clearSearch}
                             className="mt-2 text-blue-600"
                           >
@@ -425,10 +509,12 @@ export default function UserManagement() {
             </Table>
           </ScrollArea>
         </CardContent>
-        
+
         <CardFooter className="px-6 py-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row justify-between items-center">
           <div className="text-sm text-slate-500 mb-4 sm:mb-0">
-            Showing {Math.min(filteredAdmins.length, (page - 1) * limit + 1)} - {Math.min(filteredAdmins.length, page * limit)} of {filteredAdmins.length} admins
+            Showing {Math.min(filteredAdmins.length, (page - 1) * limit + 1)} -{" "}
+            {Math.min(filteredAdmins.length, page * limit)} of{" "}
+            {filteredAdmins.length} admins
           </div>
           <Pagination
             currentPage={page}
@@ -450,11 +536,14 @@ export default function UserManagement() {
               This will reset the password for {selectedAdmin?.name}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="p-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label
+                  htmlFor="currentPassword"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
                   Your Admin Password
                 </label>
                 <Input
@@ -471,11 +560,12 @@ export default function UserManagement() {
                   <Lock className="h-4 w-4" />
                   Security verification required
                 </div>
-                Please enter your current admin password to authenticate this action.
+                Please enter your current admin password to authenticate this
+                action.
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="bg-slate-50 px-6 py-4 border-t">
             <Button
               variant="ghost"
@@ -507,7 +597,7 @@ export default function UserManagement() {
               Make changes to {selectedAdmin?.name}s information
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* User Info Section */}
@@ -516,9 +606,12 @@ export default function UserManagement() {
                   <User className="h-4 w-4 text-blue-600" />
                   User Information
                 </div>
-                
+
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="username"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Username
                   </label>
                   <Input
@@ -529,9 +622,12 @@ export default function UserManagement() {
                     className="w-full"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Full Name
                   </label>
                   <Input
@@ -542,30 +638,47 @@ export default function UserManagement() {
                     className="w-full"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="roll" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="roll"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Role
                   </label>
-                  <Input
+                  <select
                     id="roll"
                     name="roll"
                     value={formData.roll}
-                    onChange={handleInputChange}
-                    className="w-full"
-                  />
+                    onChange={handleSelectChange}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="" disabled>Select a role</option>
+                    {loading ? (
+                      <option disabled>Loading...</option>
+                    ) : (
+                      roles.map((role) => (
+                        <option key={role.id} value={role.role_key}>
+                          {role.role_key} - {role.role_value}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
               </div>
-              
+
               {/* Contact Info Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                   <Mail className="h-4 w-4 text-blue-600" />
                   Contact Information
                 </div>
-                
+
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Email
                   </label>
                   <Input
@@ -576,9 +689,12 @@ export default function UserManagement() {
                     className="w-full"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="tellno" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="tellno"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Phone Number
                   </label>
                   <Input
@@ -589,9 +705,12 @@ export default function UserManagement() {
                     className="w-full"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="empid" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  <label
+                    htmlFor="empid"
+                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                  >
                     Employee ID
                   </label>
                   <Input
@@ -604,34 +723,39 @@ export default function UserManagement() {
                 </div>
               </div>
             </div>
-            
+
             <Separator className="my-6" />
-            
+
             {/* Branch Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                 <Building className="h-4 w-4 text-blue-600" />
                 Branch Information
               </div>
-              
+
               <div>
-                <label htmlFor="branchID" className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label
+                  htmlFor="branchID"
+                  className="block text-sm font-medium text-slate-700 mb-1.5"
+                >
                   Branch Location
                 </label>
                 <Select
                   id="branchID"
                   name="branchID"
                   value={formData.branchID}
-                  onValueChange={(value) => setFormData(prev => ({
-                    ...prev,
-                    branchID: value
-                  }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      branchID: value,
+                    }))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a branch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {branches.map(branch => (
+                    {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id.toString()}>
                         {branch.branch} ({branch.shortcode})
                       </SelectItem>
@@ -641,7 +765,7 @@ export default function UserManagement() {
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="bg-slate-50 px-6 py-4 border-t">
             <Button
               variant="ghost"

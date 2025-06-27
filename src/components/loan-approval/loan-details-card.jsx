@@ -4,10 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
 
-export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) {
+export default function LoanDetailsCard({
+  loan,
+  onClose,
+  onApprove,
+  onReject,
+}) {
   // Check if this loan can be approved or rejected
-  const canApprove = loan.status.toLowerCase() === 'pending' || loan.status.toLowerCase() === 'under review';
-  
+  const canApprove =
+    loan.status.toLowerCase() === "pending" ||
+    loan.status.toLowerCase() === "under review";
+
   // Check if details are still loading
   if (loan.loading) {
     return (
@@ -21,14 +28,21 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
   if (loan.error) {
     return (
       <div className="p-6">
-        <p className="text-red-500 mb-4">Error loading loan details: {loan.error}</p>
+        <p className="text-red-500 mb-4">
+          Error loading loan details: {loan.error}
+        </p>
         <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </div>
     );
   }
-  
+
+  // Add state for comment
+  const [comment, setComment] = useState("");
+
   return (
     <div className="p-2 max-h-[70vh] overflow-y-auto">
       {/* Basic loan information */}
@@ -47,11 +61,15 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
         </div>
         <div>
           <p className="text-sm text-gray-500">Status</p>
-          <Badge className={`${
-            loan.status === "Active" || loan.status === "Waiting for Funds" ? "bg-green-100 text-green-800" : 
-            loan.status === "Rejected" ? "bg-red-100 text-red-800" : 
-            "bg-yellow-100 text-yellow-800"
-          }`}>
+          <Badge
+            className={`${
+              loan.status === "Active" || loan.status === "Waiting for Funds"
+                ? "bg-green-100 text-green-800"
+                : loan.status === "Rejected"
+                ? "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
             {loan.status}
           </Badge>
         </div>
@@ -72,12 +90,12 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
           <p className="font-medium">{loan.applicationDate}</p>
         </div>
       </div>
-      
+
       {/* Additional details if available */}
       {loan.details && (
         <div className="mt-4">
           <h3 className="text-md font-semibold mb-2">Additional Details</h3>
-          
+
           {/* Customer Details */}
           {loan.details.customer && (
             <div className="border rounded-md p-3 mb-3 space-y-2">
@@ -106,17 +124,20 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
               </div>
             </div>
           )}
-          
+
           {/* Loan Details */}
           {loan.details.loan && (
             <div className="border rounded-md p-3 mb-3 space-y-2">
               <h4 className="font-medium text-sm">Loan Information</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {loan.id.startsWith('A') ? (
+                {loan.id.startsWith("A") ? (
                   <>
                     <div>
                       <p className="text-gray-500">Loan Amount</p>
-                      <p>LKR {Number(loan.details.loan.loan_amount).toLocaleString()}</p>
+                      <p>
+                        LKR{" "}
+                        {Number(loan.details.loan.loan_amount).toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Term (Months)</p>
@@ -128,7 +149,12 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
                     </div>
                     <div>
                       <p className="text-gray-500">Monthly Payment</p>
-                      <p>LKR {Number(loan.details.loan.monthly_payment).toLocaleString()}</p>
+                      <p>
+                        LKR{" "}
+                        {Number(
+                          loan.details.loan.monthly_payment
+                        ).toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Resident Type</p>
@@ -149,7 +175,10 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
                   <>
                     <div>
                       <p className="text-gray-500">Loan Amount</p>
-                      <p>LKR {Number(loan.details.loan.loanAmount).toLocaleString()}</p>
+                      <p>
+                        LKR{" "}
+                        {Number(loan.details.loan.loanAmount).toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Term</p>
@@ -161,7 +190,10 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
                     </div>
                     <div>
                       <p className="text-gray-500">Installment</p>
-                      <p>LKR {Number(loan.details.loan.Installment).toLocaleString()}</p>
+                      <p>
+                        LKR{" "}
+                        {Number(loan.details.loan.Installment).toLocaleString()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Resident Type</p>
@@ -176,97 +208,141 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
               </div>
             </div>
           )}
-          
+
           {/* Vehicle Details for Auto Loans */}
-          {loan.id.startsWith('A') && loan.details.additionalDetails?.vehicleDetails && (
-            <div className="border rounded-md p-3 mb-3 space-y-2">
-              <h4 className="font-medium text-sm">Vehicle Information</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-500">Type</p>
-                  <p>{loan.details.additionalDetails.vehicleDetails.type}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Make</p>
-                  <p>{loan.details.additionalDetails.vehicleDetails.make}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Model</p>
-                  <p>{loan.details.additionalDetails.vehicleDetails.model}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Vehicle No</p>
-                  <p>{loan.details.additionalDetails.vehicleDetails.vehicle_no}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Year</p>
-                  <p>{loan.details.additionalDetails.vehicleDetails.yom}</p>
+          {loan.id.startsWith("A") &&
+            loan.details.additionalDetails?.vehicleDetails && (
+              <div className="border rounded-md p-3 mb-3 space-y-2">
+                <h4 className="font-medium text-sm">Vehicle Information</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-gray-500">Type</p>
+                    <p>{loan.details.additionalDetails.vehicleDetails.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Make</p>
+                    <p>{loan.details.additionalDetails.vehicleDetails.make}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Model</p>
+                    <p>{loan.details.additionalDetails.vehicleDetails.model}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Vehicle No</p>
+                    <p>
+                      {loan.details.additionalDetails.vehicleDetails.vehicle_no}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Year</p>
+                    <p>{loan.details.additionalDetails.vehicleDetails.yom}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
+            )}
+
           {/* Business Details for Business Loans */}
-          {loan.id.startsWith('B') && loan.details.additionalDetails?.businessDetails && (
-            <div className="border rounded-md p-3 mb-3 space-y-2">
-              <h4 className="font-medium text-sm">Business Information</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-500">Name</p>
-                  <p>{loan.details.additionalDetails.businessDetails.name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Registration No.</p>
-                  <p>{loan.details.additionalDetails.businessDetails.regno}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Type</p>
-                  <p>{loan.details.additionalDetails.businessDetails.type}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Nature</p>
-                  <p>{loan.details.additionalDetails.businessDetails.nature}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Address</p>
-                  <p>{loan.details.additionalDetails.businessDetails.addres}</p>
+          {loan.id.startsWith("B") &&
+            loan.details.additionalDetails?.businessDetails && (
+              <div className="border rounded-md p-3 mb-3 space-y-2">
+                <h4 className="font-medium text-sm">Business Information</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-gray-500">Name</p>
+                    <p>{loan.details.additionalDetails.businessDetails.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Registration No.</p>
+                    <p>
+                      {loan.details.additionalDetails.businessDetails.regno}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Type</p>
+                    <p>{loan.details.additionalDetails.businessDetails.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Nature</p>
+                    <p>
+                      {loan.details.additionalDetails.businessDetails.nature}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Address</p>
+                    <p>
+                      {loan.details.additionalDetails.businessDetails.addres}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
+            )}
+
           {/* Financial Details for Business Loans */}
-          {loan.id.startsWith('B') && loan.details.additionalDetails?.financialDetails && (
-            <div className="border rounded-md p-3 mb-3 space-y-2">
-              <h4 className="font-medium text-sm">Financial Details</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-500">Business Income</p>
-                  <p>LKR {Number(loan.details.additionalDetails.financialDetails.Bincume).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Total Income</p>
-                  <p>LKR {Number(loan.details.additionalDetails.financialDetails.Totalincome).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Business Expenses</p>
-                  <p>LKR {Number(loan.details.additionalDetails.financialDetails.Bexpence).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Total Expenses</p>
-                  <p>LKR {Number(loan.details.additionalDetails.financialDetails.totalexpence).toLocaleString()}</p>
+          {loan.id.startsWith("B") &&
+            loan.details.additionalDetails?.financialDetails && (
+              <div className="border rounded-md p-3 mb-3 space-y-2">
+                <h4 className="font-medium text-sm">Financial Details</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-gray-500">Business Income</p>
+                    <p>
+                      LKR{" "}
+                      {Number(
+                        loan.details.additionalDetails.financialDetails.Bincume
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Total Income</p>
+                    <p>
+                      LKR{" "}
+                      {Number(
+                        loan.details.additionalDetails.financialDetails
+                          .Totalincome
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Business Expenses</p>
+                    <p>
+                      LKR{" "}
+                      {Number(
+                        loan.details.additionalDetails.financialDetails.Bexpence
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Total Expenses</p>
+                    <p>
+                      LKR{" "}
+                      {Number(
+                        loan.details.additionalDetails.financialDetails
+                          .totalexpence
+                      ).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       )}
-      
+
+      <div className="">
+        <textarea
+          className="w-full border rounded-md p-3 mb-3"
+          name="comment"
+          id=""
+          rows="1"
+          placeholder="Comment"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+        ></textarea>
+      </div>
       {/* Action buttons */}
       <div className="mt-6 flex justify-end space-x-2">
         {canApprove && (
           <>
-            <Button 
+            <Button
               variant="destructive"
               size="sm"
               onClick={() => onReject(loan.id)}
@@ -277,18 +353,18 @@ export default function LoanDetailsCard({ loan, onClose, onApprove, onReject }) 
             <Button
               variant="default"
               size="sm"
-              onClick={() => onApprove(loan.id)}
+              onClick={() => onApprove(loan.id, comment)}
               className="flex items-center"
+              disabled={!loan.details.btnStatus}
             >
-              <Clock className="mr-2 h-4 w-4" /> Submit for Funding
+              <Clock className="mr-2 h-4 w-4" />{" "}
+              {loan.details.btnStatus
+                ? "Submit for Funding"
+                : "You are not authorized"}
             </Button>
           </>
         )}
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onClose}
-        >
+        <Button variant="outline" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>
