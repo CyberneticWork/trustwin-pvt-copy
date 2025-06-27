@@ -119,14 +119,14 @@ export default function LoanApprovalPage() {
   }, []);
 
   // Functions for loan actions
-  const handleApprove = async (loanId) => {
+  const handleApprove = async (loanId, comment) => {
     try {
       const response = await fetch("/api/loan-approval/update-status", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ loanId, action: "approve" }),
+        body: JSON.stringify({ loanId, action: "approve" , comment : comment}),
       });
 
       if (!response.ok) {

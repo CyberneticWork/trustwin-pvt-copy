@@ -40,6 +40,9 @@ export default function LoanDetailsCard({
     );
   }
 
+  // Add state for comment
+  const [comment, setComment] = useState("");
+
   return (
     <div className="p-2 max-h-[70vh] overflow-y-auto">
       {/* Basic loan information */}
@@ -324,6 +327,17 @@ export default function LoanDetailsCard({
         </div>
       )}
 
+      <div className="">
+        <textarea
+          className="w-full border rounded-md p-3 mb-3"
+          name="comment"
+          id=""
+          rows="1"
+          placeholder="Comment"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+        ></textarea>
+      </div>
       {/* Action buttons */}
       <div className="mt-6 flex justify-end space-x-2">
         {canApprove && (
@@ -339,16 +353,14 @@ export default function LoanDetailsCard({
             <Button
               variant="default"
               size="sm"
-              onClick={() => onApprove(loan.id)}
+              onClick={() => onApprove(loan.id, comment)}
               className="flex items-center"
               disabled={!loan.details.btnStatus}
             >
               <Clock className="mr-2 h-4 w-4" />{" "}
-              {loan.details.btnStatus ? (
-                "Submit for Funding"
-              ) : (
-                "You are not authorized"
-              )}
+              {loan.details.btnStatus
+                ? "Submit for Funding"
+                : "You are not authorized"}
             </Button>
           </>
         )}
