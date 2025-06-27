@@ -564,7 +564,7 @@ export function UpdateClient({ onSubmit, onCancel, initialNIC  }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Spouse/Relation Details</CardTitle>
+          <CardTitle>Spouse/Relatives Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -668,7 +668,7 @@ export function UpdateClient({ onSubmit, onCancel, initialNIC  }) {
                   "w-5 h-5 rounded-full mr-2", 
                   sectionStatus.relation ? "bg-green-500" : "bg-red-500"
                 )}></div>
-                <span>Spouse/Relation Details: {sectionStatus.relation ? "Complete" : "Incomplete"}</span>
+                <span>Spouse/Relatives Details: {sectionStatus.relation ? "Complete" : "Incomplete"}</span>
               </div>
             </div>
           </div>
