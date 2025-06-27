@@ -8,6 +8,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Search, Pencil, Trash2, Plus, X, RefreshCw, Lock, Shield, User, Mail, Phone, BarChart, Building } from "lucide-react";
 import ACLData from "@/lib/jsons/ACL.json";
+import roles from "@/lib/jsons/roll.json";
 import {
   Select,
   SelectContent,
@@ -254,6 +255,21 @@ export default function UserManagement() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const roleOptions = Object.entries(roles).flatMap(([key, value]) => {
+    if (typeof value === 'object') {
+      return Object.keys(value).map(subKey => ({
+        value: subKey,
+        label: `${key.toUpperCase()} - ${subKey}`
+      }));
+    } else {
+      return { value: key, label: value };
+    }
+  });
+
+   const handleSelectChange = (e) => {
+    setFormData({ ...formData, roll: e.target.value });
   };
 
   const currentPageData = filteredAdmins.slice((page - 1) * limit, page * limit);
@@ -544,17 +560,24 @@ export default function UserManagement() {
                 </div>
                 
                 <div>
-                  <label htmlFor="roll" className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Role
-                  </label>
-                  <Input
-                    id="roll"
-                    name="roll"
-                    value={formData.roll}
-                    onChange={handleInputChange}
-                    className="w-full"
-                  />
-                </div>
+      <label htmlFor="roll" className="block text-sm font-medium text-slate-700 mb-1.5">
+        Role
+      </label>
+      <select
+        id="roll"
+        name="roll"
+        value={formData.roll}
+        onChange={handleSelectChange}
+        className="w-full border rounded px-3 py-2"
+      >
+        <option value="">Select a role</option>
+        {roleOptions.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
               </div>
               
               {/* Contact Info Section */}

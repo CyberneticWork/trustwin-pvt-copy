@@ -1,6 +1,11 @@
 {
-    "admin": "Admin",
-    "user": "User",
-    "staff": "Staff",
-    "CRO": "CRO"
+  "admin": "Admin",
+  "user": "User",
+  "staff": "Staff",
+  "CRO": "CRO",
+  "manager": {
+    "manager1": 30000,
+    "manager2": 40000,
+    "manager3": 50000
+  }
 }
