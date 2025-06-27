@@ -6,7 +6,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const loanId = searchParams.get("id");
     const token = searchParams.get("token");
-    console.log("Received tokem:", token);
+    console.log("Received token:", token);
     let userRole = null;
     let AmountVal;
     let btnStatus = false;
@@ -211,7 +211,8 @@ export async function GET(req) {
         });
       }
 
-      const loanAmount = parseFloat(loanDetails.loan_amount);
+      let loanAmountt = loanDetails.loan_amount;
+      const loanAmount = parseFloat(loanAmountt.replace(/,/g, ""));
       const amountLimit = parseFloat(AmountVal);
 
       console.log("Loan Amount:", loanAmount);
