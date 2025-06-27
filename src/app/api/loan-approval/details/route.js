@@ -212,7 +212,7 @@ export async function GET(req) {
       }
 
       let loanAmountt = loanDetails.loan_amount;
-      const loanAmount = parseFloat(loanAmountt.replace(/,/g, ""));
+      const loanAmount = parseFloat(loanAmountt);
       const amountLimit = parseFloat(AmountVal);
 
       console.log("Loan Amount:", loanAmount);
