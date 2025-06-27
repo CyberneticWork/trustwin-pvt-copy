@@ -69,6 +69,7 @@ export default function UserManagement() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]);
 
   // Function to fetch admins from API
   const fetchAdmins = async () => {
@@ -96,6 +97,21 @@ export default function UserManagement() {
       console.error("Error fetching admins:", error);
     }
   };
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch("/api/roles");
+        const data = await res.json();
+        setRoles(data.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   // Fetch branches on component mount
   useEffect(() => {
@@ -290,17 +306,6 @@ export default function UserManagement() {
       [name]: value,
     }));
   };
-
-  const roleOptions = Object.entries(roles).flatMap(([key, value]) => {
-    if (typeof value === "object") {
-      return Object.keys(value).map((subKey) => ({
-        value: subKey,
-        label: `${key.toUpperCase()} - ${subKey}`,
-      }));
-    } else {
-      return { value: key, label: value };
-    }
-  });
 
   const handleSelectChange = (e) => {
     setFormData({ ...formData, roll: e.target.value });
@@ -649,11 +654,15 @@ export default function UserManagement() {
                     className="w-full border rounded px-3 py-2"
                   >
                     <option value="" disabled>Select a role</option>
-                    {roleOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                    {loading ? (
+                      <option disabled>Loading...</option>
+                    ) : (
+                      roles.map((role) => (
+                        <option key={role.id} value={role.role_key}>
+                          {role.role_key} - {role.role_value}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
