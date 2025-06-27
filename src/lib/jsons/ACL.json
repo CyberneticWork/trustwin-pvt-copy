@@ -12,17 +12,18 @@
     "route": "/clients",
     "icon": "Users",
     "submenu": [
-      {
-        "id": 9,
-        "name": "Search Client",
-        "route": "/clients",
-        "icon": "Search"
-      },
+    
       {
         "id": 10,
-        "name": "Add New Client",
+        "name": "Customer Creation",
         "route": "/clients/add",
         "icon": "Users"
+      },
+        {
+        "id": 9,
+        "name": "Loan Creation",
+        "route": "/clients",
+        "icon": "Search"
       }
     ]
   },
@@ -34,28 +35,11 @@
     "submenu": [
       {
         "id": 12,
-        "name": "Loan Types",
+        "name": "Loan Calculator",
         "route": "/loans/0",
         "icon": "CreditCard"
-      },
-      {
-        "id": 11,
-        "name": "Business Loan",
-        "route": "/loans/business-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
-        "icon": "BriefcaseBusiness"
-      },
-      {
-        "id": 11,
-        "name": "Auto Loan",
-        "route": "/loans/auto-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
-        "icon": "BriefcaseBusiness"
-      },
-      {
-        "id": 16,
-        "name": "Equipment Loan",
-        "route": "/loans/equipment-loan/bG9naW49MixjaG9vc2U9MixjdXN0b21lcj0w",
-        "icon": "BriefcaseBusiness"
       }
+      
     ]
   },
   {
@@ -80,10 +64,16 @@
   },
   {
     "id": 18,
-    "name": "Finance",
+    "name": "Credit Approval",
     "route": "/finance",
     "icon": "Wallet"
   },
+  {
+        "id": 18,
+        "name": "Loan Approval",
+        "route": "/admin/loan-approval",
+        "icon": "UserCog"
+      },
   {
     "id": 2,
     "name": "Admins",
@@ -92,13 +82,13 @@
     "submenu": [
       {
         "id": 3,
-        "name": "Add New",
+        "name": "Employee Creation",
         "route": "/admin/addnew",
         "icon": "UserPlus"
       },
       {
         "id": 4,
-        "name": "Update",
+        "name": "Employee Update",
         "route": "/admin/user",
         "icon": "UserPen"
       },
@@ -106,12 +96,6 @@
         "id": 5,
         "name": "ACL",
         "route": "/admin/ACL",
-        "icon": "UserCog"
-      },
-      {
-        "id": 18,
-        "name": "Loan Approval",
-        "route": "/admin/loan-approval",
         "icon": "UserCog"
       }
     ]
