@@ -6,7 +6,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const loanId = searchParams.get("id");
     const token = searchParams.get("token");
-    console.log("Received tokem:", token);
+    console.log("Received token:", token);
     let userRole = null;
     let AmountVal;
     let btnStatus = false;
