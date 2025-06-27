@@ -5,6 +5,32 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const loanId = searchParams.get("id");
+    const token = searchParams.get("token");
+    console.log("Received tokem:", token);
+    let userRole = null;
+    let AmountVal;
+    let btnStatus = false;
+
+    if (token) {
+      // Validate credentials
+      const response = await fetch(
+        "http://localhost:3000/api/account/validate-credentials",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: token }),
+        }
+      );
+
+      const user = await response.json();
+
+      if (response.ok && user.code === "SUCCESS") {
+        userRole = user.user.role;
+        // console.log("User validated:", typeof userRole);
+      }
+    }
 
     if (!loanId) {
       return new Response(JSON.stringify({ error: "Loan ID is required" }), {
@@ -18,6 +44,12 @@ export async function GET(req) {
     const id = loanId.substring(2);
 
     const connection = await connectDB();
+
+    const [managerAmount] = await connection.execute(
+      `SELECT * FROM roles WHERE role_key = ?`,
+      [userRole]
+    );
+    AmountVal = managerAmount[0].role_value;
 
     try {
       let loanDetails = null;
@@ -152,7 +184,7 @@ export async function GET(req) {
 
         if (equipmentResult.length > 0) {
           additionalDetails = {
-            equipmentDetails: equipmentResult[0]
+            equipmentDetails: equipmentResult[0],
           };
         }
 
@@ -160,12 +192,17 @@ export async function GET(req) {
         loanDetails = {
           ...loanDetails,
           loanType: "Equipment Loan",
-          contractId: loanDetails.contractid || `CT-${4590 + parseInt(loanDetails.id)}`,
+          contractId:
+            loanDetails.contractid || `CT-${4590 + parseInt(loanDetails.id)}`,
           croName: loanDetails.croName || "Unassigned",
-          revenueAmount: `LKR ${Number(loanDetails.loan_amount).toLocaleString()}`,
-          status: loanDetails.status === "fund waiting"
-            ? "Waiting for Funds"
-            : loanDetails.status.charAt(0).toUpperCase() + loanDetails.status.slice(1)
+          revenueAmount: `LKR ${Number(
+            loanDetails.loan_amount
+          ).toLocaleString()}`,
+          status:
+            loanDetails.status === "fund waiting"
+              ? "Waiting for Funds"
+              : loanDetails.status.charAt(0).toUpperCase() +
+                loanDetails.status.slice(1),
         };
       } else {
         return new Response(JSON.stringify({ error: "Invalid loan type" }), {
@@ -174,10 +211,21 @@ export async function GET(req) {
         });
       }
 
+      const loanAmount = parseFloat(loanDetails.loan_amount);
+      const amountLimit = parseFloat(AmountVal);
+
+      console.log("Loan Amount:", loanAmount);
+      console.log("AmountVal:", amountLimit);
+
+      if (loanAmount < amountLimit) {
+        btnStatus = true;
+      }
+
       // Format response
       const response = {
         success: true,
         data: {
+          btnStatus,
           loan: loanDetails,
           customer: customerDetails
             ? {

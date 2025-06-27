@@ -1,19 +1,14 @@
 // app/admin/loan-approval/page.jsx
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +17,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogHeader
+  DialogHeader,
 } from "@/components/ui/dialog";
 import {
   CheckCircle,
@@ -33,7 +28,7 @@ import {
   ChevronRight,
   Search,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 
 import LoanDetailsCard from "@/components/loan-approval/loan-details-card";
@@ -58,18 +53,31 @@ export default function LoanApprovalPage() {
     total: 0,
     active: 0,
     pending: 0,
-    rejected: 0
+    rejected: 0,
   });
+
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
+
+  async function validateCredentials() {
+    // Retrieve the token from localStorage
+    const storedToken = window.localStorage.getItem("token");
+
+    setToken(storedToken);
+
+    
+  }
 
   // Fetch loan data on component mount
   useEffect(() => {
+    validateCredentials();
     const fetchLoans = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/loan-approval');
+        const response = await fetch("/api/loan-approval");
 
         if (!response.ok) {
-          throw new Error('Failed to fetch loan data');
+          throw new Error("Failed to fetch loan data");
         }
 
         const data = await response.json();
@@ -78,22 +86,30 @@ export default function LoanApprovalPage() {
           setLoanRequests(data.data || []);
 
           // Calculate statistics from the data if statistics endpoint is not available
-          const activeLoans = data.data.filter(loan => loan.status.toLowerCase() === "active").length;
-          const pendingLoans = data.data.filter(loan => loan.status.toLowerCase() === "pending" || loan.status.toLowerCase() === "under the review").length;
-          const rejectedLoans = data.data.filter(loan => loan.status.toLowerCase() === "rejected").length;
+          const activeLoans = data.data.filter(
+            (loan) => loan.status.toLowerCase() === "active"
+          ).length;
+          const pendingLoans = data.data.filter(
+            (loan) =>
+              loan.status.toLowerCase() === "pending" ||
+              loan.status.toLowerCase() === "under the review"
+          ).length;
+          const rejectedLoans = data.data.filter(
+            (loan) => loan.status.toLowerCase() === "rejected"
+          ).length;
 
           setStats({
             total: data.data.length,
             active: activeLoans,
             pending: pendingLoans,
-            rejected: rejectedLoans
+            rejected: rejectedLoans,
           });
         } else {
-          throw new Error(data.error || 'Failed to fetch loan data');
+          throw new Error(data.error || "Failed to fetch loan data");
         }
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching loan data:', err);
+        console.error("Error fetching loan data:", err);
       } finally {
         setIsLoading(false);
       }
@@ -105,72 +121,72 @@ export default function LoanApprovalPage() {
   // Functions for loan actions
   const handleApprove = async (loanId) => {
     try {
-      const response = await fetch('/api/loan-approval/update-status', {
-        method: 'POST',
+      const response = await fetch("/api/loan-approval/update-status", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ loanId, action: 'approve' }),
+        body: JSON.stringify({ loanId, action: "approve" }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to approve loan');
+        throw new Error("Failed to approve loan");
       }
 
       // Update the local state with the new "Waiting for Funds" status
       setLoanRequests(
-        loanRequests.map(loan =>
+        loanRequests.map((loan) =>
           loan.id === loanId ? { ...loan, status: "Waiting for Funds" } : loan
         )
       );
 
       // Update stats (still counts as active for statistical purposes)
-      setStats(prevStats => ({
+      setStats((prevStats) => ({
         ...prevStats,
         active: prevStats.active + 1,
-        pending: prevStats.pending - 1
+        pending: prevStats.pending - 1,
       }));
 
       // Close the dialog if it was open
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Error approving loan:', error);
+      console.error("Error approving loan:", error);
       alert(`Error: ${error.message}`);
     }
   };
 
   const handleReject = async (loanId) => {
     try {
-      const response = await fetch('/api/loan-approval/update-status', {
-        method: 'POST',
+      const response = await fetch("/api/loan-approval/update-status", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ loanId, action: 'reject' }),
+        body: JSON.stringify({ loanId, action: "reject" }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to reject loan');
+        throw new Error("Failed to reject loan");
       }
 
       // Update the local state
       setLoanRequests(
-        loanRequests.map(loan =>
+        loanRequests.map((loan) =>
           loan.id === loanId ? { ...loan, status: "Rejected" } : loan
         )
       );
 
       // Update stats
-      setStats(prevStats => ({
+      setStats((prevStats) => ({
         ...prevStats,
         rejected: prevStats.rejected + 1,
-        pending: prevStats.pending - 1
+        pending: prevStats.pending - 1,
       }));
 
       // Close the dialog if it was open
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Error rejecting loan:', error);
+      console.error("Error rejecting loan:", error);
       alert(`Error: ${error.message}`);
     }
   };
@@ -180,10 +196,10 @@ export default function LoanApprovalPage() {
       setSelectedLoan({ ...loan, loading: true });
       setIsDialogOpen(true);
 
-      const response = await fetch(`/api/loan-approval/details?id=${loan.id}`);
+      const response = await fetch(`/api/loan-approval/details?id=${loan.id}&token=${token}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch loan details');
+        throw new Error("Failed to fetch loan details");
       }
 
       const detailData = await response.json();
@@ -192,17 +208,17 @@ export default function LoanApprovalPage() {
         setSelectedLoan({
           ...loan,
           loading: false,
-          details: detailData.data
+          details: detailData.data,
         });
       } else {
-        throw new Error(detailData.error || 'Failed to fetch loan details');
+        throw new Error(detailData.error || "Failed to fetch loan details");
       }
     } catch (error) {
-      console.error('Error fetching loan details:', error);
+      console.error("Error fetching loan details:", error);
       setSelectedLoan({
         ...loan,
         loading: false,
-        error: error.message
+        error: error.message,
       });
     }
   };
@@ -217,21 +233,28 @@ export default function LoanApprovalPage() {
   };
 
   // Filter loans based on all criteria
-  const filteredLoans = loanRequests.filter(loan => {
+  const filteredLoans = loanRequests.filter((loan) => {
     // Text search filter
-    const matchesSearch = searchQuery === "" ? true : (
-      loan.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loan.contractId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loan.croName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loan.revenueAmount?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loan.loanType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      loan.status?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    
+    const matchesSearch =
+      searchQuery === ""
+        ? true
+        : loan.customerName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          loan.contractId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loan.croName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loan.revenueAmount
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          loan.loanType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loan.status?.toLowerCase().includes(searchQuery.toLowerCase());
+
     // Status filter
-    const matchesStatus = statusFilter === "" ? true : 
-      loan.status.toLowerCase() === statusFilter.toLowerCase();
-    
+    const matchesStatus =
+      statusFilter === ""
+        ? true
+        : loan.status.toLowerCase() === statusFilter.toLowerCase();
+
     // Date filter
     let matchesDate = true;
     if (startDateFilter) {
@@ -245,7 +268,7 @@ export default function LoanApprovalPage() {
       filterEndDate.setHours(23, 59, 59); // Include end of day
       matchesDate = matchesDate && loanDate <= filterEndDate;
     }
-    
+
     return matchesSearch && matchesStatus && matchesDate;
   });
 
@@ -253,7 +276,10 @@ export default function LoanApprovalPage() {
   const totalPages = Math.ceil(filteredLoans.length / recordsPerPage);
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredLoans.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentRecords = filteredLoans.slice(
+    indexOfFirstRecord,
+    indexOfLastRecord
+  );
 
   // Function to handle page navigation
   const paginate = (pageNumber) => {
@@ -284,10 +310,7 @@ export default function LoanApprovalPage() {
       <div className="flex flex-col justify-center items-center h-screen">
         <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
         <p className="text-xl text-red-600">Error: {error}</p>
-        <Button
-          className="mt-4"
-          onClick={() => window.location.reload()}
-        >
+        <Button className="mt-4" onClick={() => window.location.reload()}>
           Retry
         </Button>
       </div>
@@ -297,7 +320,9 @@ export default function LoanApprovalPage() {
   return (
     <div className="flex flex-col p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Loan Approval Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">
+          Loan Approval Management
+        </h1>
       </div>
 
       {/* Summary Cards */}
@@ -307,9 +332,7 @@ export default function LoanApprovalPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Loans</p>
-                <p className="text-xl font-bold">
-                  {stats.total}
-                </p>
+                <p className="text-xl font-bold">{stats.total}</p>
               </div>
               <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                 <FileText className="w-5 h-5" />
@@ -322,10 +345,10 @@ export default function LoanApprovalPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Active Loans</p>
-                <p className="text-xl font-bold">
-                  {stats.active}
+                <p className="text-sm font-medium text-gray-500">
+                  Active Loans
                 </p>
+                <p className="text-xl font-bold">{stats.active}</p>
               </div>
               <div className="p-3 rounded-full bg-green-100 text-green-600">
                 <CheckCircle className="w-5 h-5" />
@@ -338,10 +361,10 @@ export default function LoanApprovalPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pending Approval</p>
-                <p className="text-xl font-bold">
-                  {stats.pending}
+                <p className="text-sm font-medium text-gray-500">
+                  Pending Approval
                 </p>
+                <p className="text-xl font-bold">{stats.pending}</p>
               </div>
               <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                 <Clock className="w-5 h-5" />
@@ -354,10 +377,10 @@ export default function LoanApprovalPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Rejected Loans</p>
-                <p className="text-xl font-bold">
-                  {stats.rejected}
+                <p className="text-sm font-medium text-gray-500">
+                  Rejected Loans
                 </p>
+                <p className="text-xl font-bold">{stats.rejected}</p>
               </div>
               <div className="p-3 rounded-full bg-red-100 text-red-600">
                 <XCircle className="w-5 h-5" />
@@ -370,7 +393,7 @@ export default function LoanApprovalPage() {
       <Card>
         <CardHeader className="bg-gray-50">
           <CardTitle className="text-lg">Loan Applications</CardTitle>
-          
+
           <div className="flex flex-col sm:flex-row gap-3 w-full mt-3">
             {/* Search Box */}
             <div className="relative w-full sm:w-60">
@@ -383,10 +406,10 @@ export default function LoanApprovalPage() {
                 onChange={handleSearchChange}
               />
             </div>
-            
+
             {/* Status Filter */}
             <div className="w-full sm:w-40">
-              <select 
+              <select
                 className="w-full h-9 rounded-md border border-input px-3 py-1"
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -402,7 +425,7 @@ export default function LoanApprovalPage() {
                 <option value="under the review">Under Review</option>
               </select>
             </div>
-            
+
             {/* Date Filters */}
             <div className="flex gap-2 w-full sm:w-auto">
               <Input
@@ -426,12 +449,15 @@ export default function LoanApprovalPage() {
                 placeholder="End Date"
               />
             </div>
-            
+
             {/* Reset Filters Button */}
-            {(searchQuery || statusFilter || startDateFilter || endDateFilter) && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+            {(searchQuery ||
+              statusFilter ||
+              startDateFilter ||
+              endDateFilter) && (
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={resetFilters}
                 className="h-9"
               >
@@ -463,21 +489,39 @@ export default function LoanApprovalPage() {
                   currentRecords.map((loan) => (
                     <tr key={loan.id} className="hover:bg-gray-50">
                       {/* Removed Loan ID cell */}
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.customerName}</td>
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.contractId}</td>
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.croName}</td>
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.revenueAmount}</td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.customerName}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.contractId}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.croName}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.revenueAmount}
+                      </td>
                       <td className="px-3 py-3 whitespace-nowrap">
-                        <Badge className={`${loan.status === "Active" ? "bg-green-100 text-green-800" :
-                            loan.status === "Waiting for Funds" ? "bg-blue-100 text-blue-800" :
-                              loan.status === "Rejected" ? "bg-red-100 text-red-800" :
-                                "bg-yellow-100 text-yellow-800"
-                          }`}>
+                        <Badge
+                          className={`${
+                            loan.status === "Active"
+                              ? "bg-green-100 text-green-800"
+                              : loan.status === "Waiting for Funds"
+                              ? "bg-blue-100 text-blue-800"
+                              : loan.status === "Rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
                           {loan.status}
                         </Badge>
                       </td>
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.loanType}</td>
-                      <td className="px-3 py-3 text-sm text-gray-700 truncate">{loan.applicationDate}</td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.loanType}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-700 truncate">
+                        {loan.applicationDate}
+                      </td>
                       <td className="px-3 py-3 whitespace-nowrap text-right">
                         <Button
                           variant="ghost"
@@ -519,7 +563,9 @@ export default function LoanApprovalPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => paginate(Math.min(currentPage + 1, totalPages))}
+                  onClick={() =>
+                    paginate(Math.min(currentPage + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   Next
@@ -529,15 +575,24 @@ export default function LoanApprovalPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{indexOfFirstRecord + 1}</span> to{" "}
+                    Showing{" "}
+                    <span className="font-medium">
+                      {indexOfFirstRecord + 1}
+                    </span>{" "}
+                    to{" "}
                     <span className="font-medium">
                       {Math.min(indexOfLastRecord, filteredLoans.length)}
                     </span>{" "}
-                    of <span className="font-medium">{filteredLoans.length}</span> results
+                    of{" "}
+                    <span className="font-medium">{filteredLoans.length}</span>{" "}
+                    results
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
                     <Button
                       variant="outline"
                       size="sm"
@@ -554,13 +609,16 @@ export default function LoanApprovalPage() {
                       return (
                         <Button
                           key={pageNumber}
-                          variant={pageNumber === currentPage ? "default" : "outline"}
+                          variant={
+                            pageNumber === currentPage ? "default" : "outline"
+                          }
                           size="sm"
                           onClick={() => paginate(pageNumber)}
-                          className={`relative inline-flex items-center px-4 py-2 ${pageNumber === currentPage
+                          className={`relative inline-flex items-center px-4 py-2 ${
+                            pageNumber === currentPage
                               ? "bg-blue-500 text-white border-blue-500"
                               : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                            } text-sm font-medium`}
+                          } text-sm font-medium`}
                         >
                           {pageNumber}
                         </Button>
@@ -570,7 +628,9 @@ export default function LoanApprovalPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => paginate(Math.min(currentPage + 1, totalPages))}
+                      onClick={() =>
+                        paginate(Math.min(currentPage + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
@@ -590,7 +650,7 @@ export default function LoanApprovalPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedLoan ? `Loan Application Details` : 'Loan Details'}
+              {selectedLoan ? `Loan Application Details` : "Loan Details"}
             </DialogTitle>
           </DialogHeader>
           {selectedLoan && (
@@ -599,7 +659,9 @@ export default function LoanApprovalPage() {
               onClose={() => setIsDialogOpen(false)}
               onApprove={handleApprove}
               onReject={handleReject}
-              disableContractId={selectedLoan.status?.toLowerCase() === "pending"} // Requirement 2
+              disableContractId={
+                selectedLoan.status?.toLowerCase() === "pending"
+              } // Requirement 2
             />
           )}
         </DialogContent>
