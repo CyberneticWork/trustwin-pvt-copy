@@ -212,6 +212,9 @@ export async function GET(req) {
       }
 
       let loanAmountt = loanDetails.loan_amount;
+      if (loanAmountt === null || loanAmountt === undefined) {
+        loanAmountt = loanDetails.loanAmount;
+      }
       const loanAmount = parseFloat(loanAmountt);
       const amountLimit = parseFloat(AmountVal);
 
