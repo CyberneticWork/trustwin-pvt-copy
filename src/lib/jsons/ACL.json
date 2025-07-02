@@ -5,24 +5,28 @@
     "route": "/",
     "icon": "Home"
   },
- 
   {
     "id": 8,
     "name": "Clients",
     "route": "/clients",
     "icon": "Users",
     "submenu": [
-    
       {
         "id": 10,
         "name": "Customer Creation",
         "route": "/clients/add",
         "icon": "Users"
       },
-        {
+      {
         "id": 9,
         "name": "Loan Creation",
         "route": "/clients",
+        "icon": "Search"
+      },
+      {
+        "id": 11,
+        "name": "View Loan List",
+        "route": "/clients/view-loan-list",
         "icon": "Search"
       }
     ]
@@ -39,7 +43,6 @@
         "route": "/loans/0",
         "icon": "CreditCard"
       }
-      
     ]
   },
   {
@@ -69,11 +72,11 @@
     "icon": "Wallet"
   },
   {
-        "id": 18,
-        "name": "Loan Approval",
-        "route": "/admin/loan-approval",
-        "icon": "UserCog"
-      },
+    "id": 18,
+    "name": "Loan Approval",
+    "route": "/admin/loan-approval",
+    "icon": "UserCog"
+  },
   {
     "id": 2,
     "name": "Admins",
