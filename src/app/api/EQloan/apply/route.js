@@ -3,7 +3,10 @@ import { connectDB } from "@/lib/db";
 // Function to generate payment schedule
 function generatePaymentSchedule(loanAmount, interestRate, loanTermMonths) {
   const monthlyInterestRate = interestRate / 100 / 12;
-  const monthlyPayment = loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTermMonths) / 
+  const monthlyPayment =
+    (loanAmount *
+      monthlyInterestRate *
+      Math.pow(1 + monthlyInterestRate, loanTermMonths)) /
     (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
 
   const schedule = [];
@@ -15,11 +18,13 @@ function generatePaymentSchedule(loanAmount, interestRate, loanTermMonths) {
     remainingBalance -= principalAmount;
 
     schedule.push({
-      paymentDate: new Date(Date.now() + (month * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      paymentDate: new Date(Date.now() + month * 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
       paymentAmount: parseFloat(monthlyPayment.toFixed(2)),
       principalAmount: parseFloat(principalAmount.toFixed(2)),
       interestAmount: parseFloat(interestAmount.toFixed(2)),
-      remainingBalance: parseFloat(remainingBalance.toFixed(2))
+      remainingBalance: parseFloat(remainingBalance.toFixed(2)),
     });
   }
 
@@ -29,25 +34,40 @@ function generatePaymentSchedule(loanAmount, interestRate, loanTermMonths) {
 export async function POST(req) {
   try {
     const data = await req.json();
-    
+
     // Validate required fields
-    const requiredFields = ['customer_id', 'equipment_price', 'down_payment', 'loan_amount', 'loan_term_months', 
-                           'interest_rate', 'monthly_payment', 'total_interest', 'total_payable', 'effective_rate',
-                           'client_receiving_amount'];
-    
-    const missingFields = requiredFields.filter(field => data[field] === undefined);
+    const requiredFields = [
+      "customer_id",
+      "equipment_price",
+      "down_payment",
+      "loan_amount",
+      "loan_term_months",
+      "interest_rate",
+      "monthly_payment",
+      "total_interest",
+      "total_payable",
+      "effective_rate",
+      "client_receiving_amount",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => data[field] === undefined
+    );
     if (missingFields.length > 0) {
-      return Response.json({
-        code: "ERROR",
-        message: `Missing required fields: ${missingFields.join(', ')}`
-      }, { status: 400 });
+      return Response.json(
+        {
+          code: "ERROR",
+          message: `Missing required fields: ${missingFields.join(", ")}`,
+        },
+        { status: 400 }
+      );
     }
 
     const connection = await connectDB();
-    
+
     // Start transaction
     await connection.beginTransaction();
-    
+
     try {
       // Check if required tables exist
       const [tables] = await connection.execute(
@@ -57,24 +77,33 @@ export async function POST(req) {
          AND TABLE_NAME IN ('equipment_loan_applications', 'initial_charges', 'payment_schedule', 'loan_payments')`
       );
 
-      const requiredTables = ['equipment_loan_applications', 'initial_charges', 'payment_schedule', 'loan_payments'];
-      const missingTables = requiredTables.filter(table => !tables.some(t => t.TABLE_NAME === table));
+      const requiredTables = [
+        "equipment_loan_applications",
+        "initial_charges",
+        "payment_schedule",
+        "loan_payments",
+      ];
+      const missingTables = requiredTables.filter(
+        (table) => !tables.some((t) => t.TABLE_NAME === table)
+      );
 
       if (missingTables.length > 0) {
-        throw new Error(`Missing required tables: ${missingTables.join(', ')}`);
+        throw new Error(`Missing required tables: ${missingTables.join(", ")}`);
       }
 
       // Insert into equipment_loan_applications
       console.log(data);
-      
+      const contractID = `CT-${4590 + Math.floor(Math.random() * 1000)}`; // Generate a unique contract ID
+      data.contractid = contractID; // Add contract ID to data
       const [loanResult] = await connection.execute(
         `INSERT INTO equipment_loan_applications (
-          customer_id, EQ_price, down_payment, trade_in_value, loan_amount,
+          customer_id, 	contractid, EQ_price, down_payment, trade_in_value, loan_amount,
           loan_term_months, interest_rate, monthly_payment, total_interest,
           total_payable, effective_rate, client_receiving_amount, status, CROid, Addby
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.customer_id,
+          data.contractid,
           data.equipment_price,
           data.down_payment,
           data.trade_in_value || 0,
@@ -86,9 +115,9 @@ export async function POST(req) {
           data.total_payable,
           data.effective_rate,
           data.client_receiving_amount,
-          'pending',
+          data.status || "pending",
           data.CROid,
-          data.Addby
+          data.Addby,
         ]
       );
 
@@ -109,15 +138,18 @@ export async function POST(req) {
             data.initial_charges.introducer_commission,
             data.initial_charges.other_charges,
             data.initial_charges.total_charges,
-            data.initial_charges.charges_option
+            data.initial_charges.charges_option,
           ]
         );
       }
 
       // Store payment schedule as JSON from client
-      if (Array.isArray(data.payment_schedule) && data.payment_schedule.length > 0) {
+      if (
+        Array.isArray(data.payment_schedule) &&
+        data.payment_schedule.length > 0
+      ) {
         await connection.execute(
-          'UPDATE equipment_loan_applications SET payment_schedule = ? WHERE id = ?',
+          "UPDATE equipment_loan_applications SET payment_schedule = ? WHERE id = ?",
           [JSON.stringify({ schedule: data.payment_schedule }), loanId]
         );
       }
@@ -128,9 +160,8 @@ export async function POST(req) {
       return Response.json({
         code: "SUCCESS",
         message: "Loan application created successfully",
-        loan_id: loanId
+        loan_id: loanId,
       });
-
     } catch (error) {
       // Rollback transaction on error
       await connection.rollback();
@@ -138,12 +169,14 @@ export async function POST(req) {
     } finally {
       await connection.end();
     }
-
   } catch (error) {
     console.error("Error creating loan application:", error);
-    return Response.json({
-      code: "ERROR",
-      message: "Failed to create loan application"
-    }, { status: 500 });
+    return Response.json(
+      {
+        code: "ERROR",
+        message: "Failed to create loan application",
+      },
+      { status: 500 }
+    );
   }
 }

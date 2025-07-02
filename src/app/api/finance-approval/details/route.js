@@ -162,7 +162,7 @@ export async function GET(req) {
           croName: loanResult[0].croName || "Unassigned",
           revenueAmount: Number(loanResult[0].loan_amount).toLocaleString(),
           status:
-            loanResult[0].status === "fund waiting"
+            loanResult[0].status === "Waiting for Funds"
               ? "Waiting for Funds"
               : loanResult[0].status.charAt(0).toUpperCase() +
                 loanResult[0].status.slice(1),
