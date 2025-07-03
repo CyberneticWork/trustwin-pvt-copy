@@ -22,14 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import {
-  Search,
-  Car,
-  Package,
-  Building,
-  FileText,
-  ChevronRight,
-} from "lucide-react";
+import { Search, Car, Package, Building, FileText, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -57,8 +50,8 @@ export default function LoanListTable({
       setIsMobile(window.innerWidth < 768);
     };
     checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
-    return () => window.removeEventListener("resize", checkIfMobile);
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
   const getLoanTypeIcon = (loanType) => {
@@ -129,26 +122,17 @@ export default function LoanListTable({
         <div className="md:hidden space-y-3">
           {currentLoans.length > 0 ? (
             currentLoans.map((loan) => (
-              <div
-                key={loan.id}
-                className="border rounded-lg p-3 shadow-sm bg-white"
-              >
+              <div key={loan.id} className="border rounded-lg p-3 shadow-sm bg-white">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <div className="font-medium text-sm">{loan.id}</div>
-                    <div className="text-xs text-gray-500">
-                      {loan.contractId}
-                    </div>
+                    <div className="text-xs text-gray-500">{loan.contractId}</div>
                   </div>
-                  <Badge
-                    className={`font-medium text-xs ${getStatusBadgeColor(
-                      loan.status
-                    )}`}
-                  >
+                  <Badge className={`font-medium text-xs ${getStatusBadgeColor(loan.status)}`}>
                     {loan.status}
                   </Badge>
                 </div>
-
+                
                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                   <div>
                     <p className="text-xs text-gray-500">Customer</p>
@@ -178,7 +162,7 @@ export default function LoanListTable({
                     <p>{loan.applicationDate}</p>
                   </div>
                 </div>
-
+                
                 <Link href={`/loan-info/installments/${loan.contractId}`}>
                   <button className="w-full flex items-center justify-center text-sm py-2 px-3 rounded text-white font-medium bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 transition-all shadow-sm">
                     View Payments <ChevronRight className="ml-1 h-4 w-4" />
@@ -242,11 +226,7 @@ export default function LoanListTable({
                       {loan.croName}
                     </TableCell>
                     <TableCell className="whitespace-nowrap min-w-[120px]">
-                      <Badge
-                        className={`font-medium ${getStatusBadgeColor(
-                          loan.status
-                        )}`}
-                      >
+                      <Badge className={`font-medium ${getStatusBadgeColor(loan.status)}`}>
                         {loan.status}
                       </Badge>
                     </TableCell>
