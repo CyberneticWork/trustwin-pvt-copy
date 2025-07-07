@@ -27,7 +27,7 @@ export async function POST(req) {
     const id = loanId.substring(2);
 
     // Changed: Use 'Waiting for Funds' status instead of 'active' when approving
-    const status = action === "approve" ? "pending" : "rejected";
+    const status = action === "approve" ? "fund waiting" : "rejected";
 
     const connection = await connectDB();
 
