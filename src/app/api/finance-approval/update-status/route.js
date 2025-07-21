@@ -15,7 +15,9 @@ export async function POST(req) {
 
     if (!["approve", "reject"].includes(action)) {
       return new Response(
-        JSON.stringify({ error: "Invalid action. Must be 'approve' or 'reject'" }),
+        JSON.stringify({
+          error: "Invalid action. Must be 'approve' or 'reject'",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -23,6 +25,7 @@ export async function POST(req) {
     const loanType = loanId.charAt(0); // 'A' for auto loans, 'B' for business loans, 'E' for equipment loans
     const id = loanId.substring(2); // Extract the numeric ID
     const status = action === "approve" ? "active" : "rejected";
+    console.log(status, "status");
 
     const connection = await connectDB();
 
@@ -45,7 +48,7 @@ export async function POST(req) {
 
         contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
         transferType = "Auto Loan";
-        
+
         await connection.execute(
           `UPDATE auto_loan_applications SET status = ?, comment = ? WHERE id = ?`,
           [status, comment || "", id]
@@ -62,7 +65,7 @@ export async function POST(req) {
 
         contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
         transferType = "Business Loan";
-        
+
         await connection.execute(
           `UPDATE loan_bussiness SET status = ? WHERE id = ?`,
           [status, id]
@@ -79,7 +82,7 @@ export async function POST(req) {
 
         contractId = loanResult[0].contractid || `CT-${4590 + parseInt(id)}`;
         transferType = "Equipment Loan";
-        
+
         await connection.execute(
           `UPDATE equipment_loan_applications SET status = ?, comment = ? WHERE id = ?`,
           [status, comment || "", id]
@@ -88,7 +91,10 @@ export async function POST(req) {
         throw new Error("Invalid loan type");
       }
 
-      const currentDate = new Date().toISOString().slice(0, 19).replace("T", " ");
+      const currentDate = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
       const transferId = `TRF-${Date.now().toString().slice(-6)}`;
 
       // Check if 'comment' column exists in fintransfer table
@@ -98,7 +104,7 @@ export async function POST(req) {
 
       // Construct the SQL statement based on column existence
       let sql, params;
-      
+
       if (columns.length > 0) {
         // If 'comment' column exists
         sql = `INSERT INTO fintransfer 
@@ -136,7 +142,9 @@ export async function POST(req) {
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Funding ${action === "approve" ? "approved" : "rejected"} successfully`,
+          message: `Funding ${
+            action === "approve" ? "approved" : "rejected"
+          } successfully`,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );

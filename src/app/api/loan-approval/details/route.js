@@ -211,7 +211,11 @@ export async function GET(req) {
         });
       }
 
-      const loanAmount = parseFloat(loanDetails.loan_amount);
+      let loanAmountt = loanDetails.loan_amount;
+      if (loanAmountt === null || loanAmountt === undefined) {
+        loanAmountt = loanDetails.loanAmount;
+      }
+      const loanAmount = parseFloat(loanAmountt);
       const amountLimit = parseFloat(AmountVal);
 
       console.log("Loan Amount:", loanAmount);
